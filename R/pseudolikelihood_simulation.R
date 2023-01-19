@@ -24,6 +24,25 @@ data_generation = function(N=1000,p=10, no.reps=1) {
   return(list(X=X_list, mu = Mu, sigma=Sigma))
 }
 
+data_generation2 = function(N=1000, p=10) {
+  set.seed(2)
+  Mu = matrix(runif(p,-1,1), nrow=p, ncol=1)
+  params = runif(p*(p-1)/2)
+  Sigma = matrix(0, nrow=p, ncol=p)
+  Sigma[lower.tri(Sigma, diag=F)] = params
+  for (i in 1:(p-1)) {
+    for (j in (i+1):p) {
+      Sigma[i,j] = Sigma[j,i]
+    }
+  }
+  X = matrix(0, nrow=N, ncol=p)
+  for (iter in 1:1e3) {
+    for (i in 1:p) {
+      X[,i] = 1 * (rlogis(N) <= Mu[i] + 2* X %*% Sigma[,i])
+    }
+  }
+  return(list(X=X, mu=Mu, sigma=Sigma))
+}
 
 #helper function to get indices of mu
 re_index = function(p=10) {
@@ -156,7 +175,7 @@ invert_hessian <- function(x, sigma, index, prior_var = Inf) {
     pq[, s] <- nexpit(phi)
   }
   
-  # compute int_hessian 
+  # compute int_hessian
   main_hessian <- matrix(0, nrow = p, ncol = p)
   for (s in 1:p) {
     main_hessian[s,s] <- -sum(pq[, s]*(1-pq[,s])) - 1
@@ -319,9 +338,9 @@ multidimensional_update <- function(x, sigma, index, suff_stat, prior_var = Inf)
 }
 
 optimize_pseudolikelihood <- function(x, iteration_max = 1e2, prior_var = Inf) {
+  
   p <- ncol(x)
   n <- nrow(x)
-  
   # parameter matrix and sufficient statistics 
   sigma <- matrix(0, nrow = p, ncol = p)
   suff_stat <- t(x) %*% x
@@ -380,11 +399,11 @@ optimize_pseudolikelihood <- function(x, iteration_max = 1e2, prior_var = Inf) {
 
 pseudolikelihood = function(data) {
   estimators = optimize_pseudolikelihood(data)
-  
   sigma = estimators$sigma
   mu = estimators$mu
   mse_m = estimators$mse_mu
   mse_s = estimators$mse_sigma
+  
   se = estimators$se
   p = length(mu)
   se_mu = se[1:p]
@@ -392,17 +411,13 @@ pseudolikelihood = function(data) {
   ll = estimators$likelihood
   return(list(likelihood=ll, sigma_pl = sigma, mu_pl = mu, mse_sigma = mse_s, mse_mu = mse_m, se_mu = se_mu, se_sigma = se_sigma))
 }
-
-
-
-
-
-exact_likelihood = function(data, theta_0) {
+hessen = function(data, theta_0) {
   N = nrow(data)
   O = t(data) %*% data * 2
   diag(O) = diag(O)/2
   O = O[lower.tri(O, diag=TRUE)]
   
+  ys = unique(data)
   p = ncol(data)
   theta = theta_0[lower.tri(theta_0, diag=TRUE)]
   for(iter in 1:1e3) {
@@ -413,20 +428,11 @@ exact_likelihood = function(data, theta_0) {
     
     
     Z = 0
-    y = matrix(0, nrow = p, ncol = 1)
     
-    repeat {
-      if(y[1] == 0) {
-        y[1] = 1
-      } else {
-        for(i in 2:p) {
-          if(y[i] == 0) {
-            y[i] = 1
-            y[1:(i-1)] = 0
-            break
-          }
-        }
-      }
+    for (i_row in 1:nrow(unique)) {
+      
+      y = ys[i_row,]
+      count = count+1
       suf = 2 * y %*% t(y)
       diag(suf) = diag(suf)/2
       suf = suf[lower.tri(suf, diag=TRUE)]
@@ -438,12 +444,8 @@ exact_likelihood = function(data, theta_0) {
       E_suf = E_suf + suf * weight
       
       E_ss = E_ss + suf %*% t(suf) * weight
-      
-      
-      if(sum(y) == p)
-        break
     }
-    
+    print(Z)
     E_suf = E_suf/Z
     E_ss = E_ss/Z
     
@@ -461,7 +463,6 @@ exact_likelihood = function(data, theta_0) {
     }
   }
   #SE = sqrt(diag(solve(-H)))
-  ll_value = ll
   SE = SEfromHessian(-H)
   indices = re_index(p)
   
@@ -488,218 +489,124 @@ exact_likelihood = function(data, theta_0) {
   return(list(likelihood=ll, mu_ML = mu_ml, sigma_ML = theta_l, mse_mu = mse_muML, mse_sigma = mse_sigML, SE_mu = SE_mu, SE_sigma = SE_sigma))
   
 }
-#------ Actual performance of both the exact likelihood and the pseudolikelihood
 
-# # 
-# set.seed(1)
-# N_list = seq(100, 1000, 100)
-# l = length(N_list)
-# mse_muPL = rep(0, l)
-# mse_muML = rep(0, l)
-# mse_sigPL = relative_bias_mu = rep(0, l)
-# mse_sigML = relative_bias_sig = rep(0, l)
-# likelihood_values = pseudolikelihood_values = rep(0,l)
-# 
-# se_muPL = rep(0,l)
-# se_sigPL = rep(0,l)
-# se_muML = rep(0, l)
-# se_sigML = rep(0,l)
-# time_PL = rep(0, l)
-# time_ML = rep(0, l)
-# no.reps = 100
-# 
-# for (i in 1:l) {
-#   n = N_list[i]
-#   print(paste("n = ", n))
-#   data_gen = data_generation(N=n, no.reps=no.reps)
-#   data = data_gen$X
-#   Mu = data_gen$mu
-#   Sigma = data_gen$sigma
-# 
-# 
+
+
+
+exact_likelihood = function(data, theta_0) {
+  N = nrow(data)
+  O = t(data) %*% data * 2
+  diag(O) = diag(O)/2
+  O = O[lower.tri(O, diag=TRUE)]
+  
+  p = ncol(data)
+  theta = theta_0[lower.tri(theta_0, diag=TRUE)]
+  for(iter in 1:1e3) {
+    theta_old = theta
+    
+    E_suf = matrix(0, nrow = p*(p+1)/2, ncol=1)
+    E_ss = matrix(0, nrow = p*(p+1)/2, ncol = p*(p+1)/2)
+    
+    
+    Z = 0.0
+    y = matrix(0, nrow = p, ncol = 1)
+    Z = normalizingConstant(theta, E_suf, E_ss, Z, y)
+    
+    E_suf = E_suf/Z
+    E_ss = E_ss/Z
+    
+    H = -N * (E_ss - E_suf %*% t(E_suf))
+    grad = O - N*E_suf
+    
+    theta = theta - solve(H)%*%grad
+    ll = t(O) %*% theta - N * log(Z)
+    D = sum(abs(theta-theta_old))
+    if(D < sqrt(.Machine$double.eps)) {
+      break
+    }
+  }
+  #SE = sqrt(diag(solve(-H)))
+  ll_value = ll
+  SE = SEfromHessian(-H)
+  indices = re_index(p)
+  
+  SE_mu = SE[indices]
+  SE_sigma = SE[-indices]
+  
+  theta_l = theta
+  theta_l = matrix(0, nrow=p, ncol=p)
+  theta_l[lower.tri(theta_l,diag=TRUE)] = theta
+  
+  for (i in 1:(p-1)) {
+    for (j in (i+1): p) {
+      theta_l[i,j] = theta_l[j,i]
+    }
+  }
+  mu_ml = diag(theta_l)
+  diag(theta_l) = 0
+  
+  
+  mse_muML = mean((mu_ml - Mu)^2)
+  mse_sigML = mean((theta_l[lower.tri(theta_l)] - Sigma[lower.tri(Sigma)])^2)
+  
+  return(list(likelihood=ll, mu_ML = mu_ml, sigma_ML = theta_l, mse_mu = mse_muML, mse_sigma = mse_sigML, SE_mu = SE_mu, SE_sigma = SE_sigma))
+  
+}
+# #------ Actual performance of both the exact likelihood and the pseudolikelihood
+# n_list = c(200, 500, 1000, 5000)
+# l = length(n_list)
+# sigma_PL = sigma_ML = mu_PL = mu_ML = list()
+# Sigma_full = Mu_full = list()
+# no.reps = 10
+# for (i in 1:length(n_list)) {
+#   n = n_list[i]
+#   print(paste("N = ", n))
+#   data = data_generation(N=n, no.reps = no.reps)
+#   Mu = data$mu
+#   Sigma = data$sigma
+#   s_ml = s_pl = matrix(0, nrow=p*(p-1)/2, ncol=1)
+#   mu_ml = mu_pl = matrix(0, nrow=p, ncol=1)
+#   X = data$X
 #   for (rep in 1:no.reps) {
-#     this_data = data[[rep]]
-#     time1 = Sys.time()
-#     est_pl = pseudolikelihood(this_data)
-#     time2 = Sys.time()
+#     x = X[[rep]]
+#     p = ncol(x)
 # 
-#     mu_pl = est_pl$mu_pl
-#     sig_pl = est_pl$sigma_pl
+#     Mu_full[[i]] = Mu
+#     Sigma_full[[i]] = Sigma
 # 
-#     diag(sig_pl) = mu_pl
+#     pseudo = pseudolikelihood(x)
+#     print("pseudolikelihood ended")
+#     sig_pl = pseudo$sigma_pl
+#     s_pl = s_pl + sig_pl[lower.tri(sig_pl, F)]
+#     m_pl = m_pl + pseudo$mu_pl
+#     theta_pl = sig_pl
+#     diag(theta_pl) = m_pl
 # 
-#     time22 = Sys.time()
-#     est_ml = exact_likelihood(this_data, sig_pl)
-#     time3 = Sys.time()
-# 
-#     time_PL[i] = time_PL[i] + (time2 - time1)/no.reps
-#     time_ML[i] = time_ML[i] + (time3 - time22)/no.reps
-# 
-#     mse_muPL[i] = mse_muPL[i] + est_pl$mse_mu/no.reps
-#     mse_sigPL[i] = mse_sigPL[i] + est_pl$mse_sigma/no.reps
-# 
-#     mse_muML[i] = mse_muML[i] + est_ml$mse_mu/no.reps
-#     mse_sigML[i] = mse_sigML[i] + est_ml$mse_sigma/no.reps
-# 
-#     se_muPL[i] = se_muPL[i] + mean(est_pl$se_mu)/no.reps
-#     se_sigPL[i] = se_sigPL[i] + mean(est_pl$se_sigma)/no.reps
-# 
-#     se_muML[i] = se_muML[i] + mean(est_ml$SE_mu)/no.reps
-#     se_sigML[i] = se_sigML[i] + mean(est_ml$SE_sigma)/no.reps
-#     
-#     relative_bias_mu[i] = relative_bias_mu[i] + (est_pl$mse_mu/est_ml$mse_mu)/no.reps
-#     relative_bias_sig[i] = relative_bias_sig[i] + (est_pl$mse_sigma/est_ml$mse_sigma)/no.reps
-#     
+#     start_l = matrix(0, nrow=p, ncol=p)
+#     print(paste("p = ",p))
+#     likelihood = exact_likelihood(x, start_l)
+#     print("exact likelihood ended")
+#     sig_ml = likelihood$sigma_ML
+#     s_ml = s_ml + sig_ml[lower.tri(sig_ml, F)]
+#     m_ml = m_ml + likelihood$mu_ML
+#     hessen = hessen()
 #   }
-# 
+#   sigma_PL[[i]] = s_pl/no.reps
+#   mu_PL[[i]] = m_pl/no.reps
+#   sigma_ML[[i]] = s_ml/no.reps
+#   mu_ML[[i]] = m_ml/no.reps
+# }
+# par(mfrow = c(2,2))
+# for (i in 1:l) {
+#   print(i)
+#   plot(c(sigma_PL[[i]], mu_PL[[i]]), c(Sigma_full[[i]], Mu_full[[i]]), main=paste("N =", n_list[i]), xlab="PL", ylab="True");abline(0,1)
 # }
 # 
-# 
-# 
-# parameter_plots_n = function() {
-#   Ns = c(100, 1000, 2500, 5000)
-#   par(mfrow=c(2,2))
-#   no.reps=100
-#   for (n in 1:length(Ns)) {
-#     N = Ns[n]
-#     print(paste("N =", N))
-#     set.seed(n)
-#     data = data_generation(N=N, no.reps=no.reps)
-#     X = data$X
-#     Mu = data$mu
-#     Sigma = data$sigma
-#     p = length(Mu)
-#     sigma_pl = sigma_ml = matrix(0, p, p)
-#     mu_pl = mu_ml = se_mu_ml = se_mu_pl =rep(0,p)
-#     se_sig_ml = se_sig_pl = rep(0, p*(p-1)/2)
-#     for (rep in 1:no.reps) {
-#       print(paste("rep =", rep))
-#       x = X[[rep]]
-#       pseu = pseudolikelihood(x)
-#       thetapl = pseu$sigma_pl
-#       diag(thetapl) = pseu$mu_pl
-#       sigma_pl = sigma_pl + pseu$sigma_pl/no.reps
-#       mu_pl = mu_pl + pseu$mu_pl/no.reps
-#       
-#       exact = exact_likelihood(x, thetapl)
-#       sigma_ml = sigma_ml + exact$sigma/no.reps
-#       mu_ml = mu_ml + exact$mu/no.reps
-#       
-#       se_mu_pl = se_mu_pl + pseu$se_mu/no.reps
-#       se_sig_pl = se_sig_pl + pseu$se_sigma/no.reps
-#       
-#       se_mu_ml = se_mu_ml + exact$SE_mu/no.reps
-#       se_sig_ml = se_sig_ml + exact$SE_sigma/no.reps
-#     }
-#     plot(mu_ml, mu_pl, main=paste("N =", N), xlab="Mu ML", ylab="Mu PL");abline(0,1)
-#     
-#   }
+# data = data_generation(p=20)
+# X = data$X
+# Mu = 
+# p_list = 4:18
+# for (ind in 1:length(p_list)) {
+#   p = p_list[ind]
+#   data = data_generation()
 # }
-
-
-# # -------------------- varying number of variables -------------------------
-
-run_comparison_p = function() {
-  p_list = 5:14
-  no.reps = 100
-  len = length(p_list)
-  mse_mu_ml = mse_sig_ml = mse_mu_pl = mse_sig_pl = mse_mu_H = mse_sig_H = rep(0, len)
-  mse_pl_p = mse_ml_p = times_ml = times_pl = times_hes = rep(0, len)
-  
-  se_pl_mu = se_pl_sig = se_ml_mu = se_ml_sig = rep(0, len)
-  ll_values = pl_values = rep(0, len)
-  for (i in 1:len) {
-    p = p_list[i]
-    data = data_generation(p=p, no.reps=no.reps)
-    X = data$X
-    Mu = data$mu
-    Sigma = data$sigma
-    
-    for (rep in 1:no.reps) {
-      x = X[[rep]]
-      time_1 = Sys.time()
-      pl = pseudolikelihood(x)
-      
-      mu_PL = pl$mu_pl
-      sigma_PL = pl$sigma_pl
-      
-      diag(sigma_PL) = mu_PL
-      time_2 = Sys.time()
-      ml = exact_likelihood(x, sigma_PL)
-      time_3 = Sys.time()
-      # 
-      # mse_mu_ml[i] = mse_mu_ml[i] + ml$mse_mu/no.reps
-      # mse_sig_ml[i] = mse_sig_ml[i] + ml$mse_sigma/no.reps
-      # mse_mu_pl[i] = mse_mu_pl[i] + pl$mse_mu/no.reps
-      # mse_sig_pl[i] = mse_sig_pl[i] + pl$mse_sigma/no.reps
-      ll_values[i] = ll_values[i] + ml$likelihood/no.reps
-      pl_values[i] = pl_values[i] + pl$likelihood/no.reps
-      
-      # se_pl_mu[i] = se_pl_mu[i] + mean(pl$se_mu)/no.reps
-      # se_pl_sig[i] = se_pl_sig[i] + mean(pl$se_sigma)/no.reps
-      # se_ml_mu[i] = se_ml_mu[i] + mean(ml$SE_mu)/no.reps
-      # se_ml_sig[i] = se_ml_sig[i] + mean(ml$SE_sigma)/no.reps
-      # times_pl[i] = times_pl[i] + (time_2 - time_1)/no.reps
-      # times_ml[i] = times_ml[i] + (time_3 - time_2)/no.reps
-    }
-  }
-  par(mfrow=c(2,1))
-  fractions = pl_values/ll_values
-  ymin = min(c(ll_values, pl_values))
-  ymax = max(c(ll_values, pl_values))
-  
-  plot(p_list, ll_values, ylim=c(ymin, ymax), xlab="p", ylab="likelihood", type="l", col="red")
-  lines(p_list, pl_values, type="l", col="blue")
-  
-  plot(p_list, fractions, type="l", xlab="p", ylab="fraction likelihood")
-}
-
-parameter_plots_p = function() {
-  Ps = c(5, 7, 10, 15)
-  par(mfrow=c(2,2))
-  no.reps = 100
-  for (p in Ps) {
-    print(paste("p =", p))
-    data_gen = data_generation(p=p, no.reps=no.reps)
-    muex = mupl =  rep(0, p)
-    sigex = sigpl = matrix(0, p, p)
-    se_mupl = se_muml = rep(0, p)
-    se_sigpl = se_sigml = rep(0, p*(p-1)/2)
-    X = data_gen$X
-    Mu = data_gen$mu
-    Sigma = data_gen$sigma
-    for (rep in 1:no.reps) {
-      if (rep%%10 == 0) {
-        print(paste("rep", rep))
-      }
-      x = X[[rep]]
-      pseu = pseudolikelihood(x)
-      print("pseudolikelihood finished")
-      mupl = mupl + pseu$mu_pl/no.reps
-      thistheta = pseu$sigma_pl
-      diag(thistheta) = pseu$mu_pl
-      sigpl = sigpl + pseu$sigma_pl/no.reps
-      diag(sigpl) = mupl
-      
-      exact = exact_likelihood(x, thistheta)
-      muex = muex + exact$mu/no.reps
-      sigex = sigex + exact$sigma/no.reps
-      
-      se_mupl = se_mupl + pseu$se_mu/no.reps
-      se_sigpl = se_sigpl + pseu$se_sigma/no.reps
-      
-      se_muml = se_muml + exact$SE_mu/no.reps
-      se_sigml = se_sigml + exact$SE_sigma/no.reps
-    }
-    plot(se_sigml, se_sigpl, main=paste("p =", p), xlab= "ML Sigma", ylab="PL Sigma");abline(0,1)
-    
-    
-  }
-}
-p = 10
-y = rep(0,p)
-theta = rep(0, p*(p+1)/2)
-Esuf = matrix(0, nrow=p*(p+1)/2, 1)
-Ess = matrix(0, nrow=p*(p+1)/2, ncol=p*(p+1)/2)
-Z = 0.0
-

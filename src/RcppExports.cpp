@@ -11,17 +11,18 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // normalizingConstant
-void normalizingConstant(NumericVector theta, NumericVector Esuf, NumericMatrix Ess, double Z, IntegerVector y);
+double normalizingConstant(NumericVector theta, NumericVector Esuf, NumericMatrix Ess, double Z, NumericVector y);
 RcppExport SEXP _pseudolikelihood_normalizingConstant(SEXP thetaSEXP, SEXP EsufSEXP, SEXP EssSEXP, SEXP ZSEXP, SEXP ySEXP) {
 BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type Esuf(EsufSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type Ess(EssSEXP);
     Rcpp::traits::input_parameter< double >::type Z(ZSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type y(ySEXP);
-    normalizingConstant(theta, Esuf, Ess, Z, y);
-    return R_NilValue;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(normalizingConstant(theta, Esuf, Ess, Z, y));
+    return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_hello_world
