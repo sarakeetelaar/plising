@@ -5,6 +5,10 @@ normalizingConstant <- function(theta, Esuf, Ess, Z, y) {
     .Call(`_pseudolikelihood_normalizingConstant`, theta, Esuf, Ess, Z, y)
 }
 
+hessenNorm <- function(thetaH, EsufH, EssH, ZH, yH) {
+    .Call(`_pseudolikelihood_hessenNorm`, thetaH, EsufH, EssH, ZH, yH)
+}
+
 rcpp_hello_world <- function() {
     .Call(`_pseudolikelihood_rcpp_hello_world`)
 }

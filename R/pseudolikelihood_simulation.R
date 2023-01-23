@@ -1,12 +1,39 @@
 # data generation
-library("HelpersMG")
-data_generation = function(N=1000,p=10, no.reps=1) {
+library(igraph)
+random_network = function(p, m) {
+  gr = random.graph.game(p, m, type="gnm")
+  A = as_adjacency_matrix(gr)
+  return(as.matrix(A))
+}
+
+create_small_world = function(p, nei=2, pr=.2) {
+  world = sample_smallworld(1, p, nei, pr)
+  A = as_adjacency_matrix(world)
+  return(as.matrix(A))
+}
+
+scale_free_network = function(p=10, m=NULL) {
+  graph = barabasi.game(p, 1, m, directed=FALSE)
+  A = as_adjacency_matrix(graph)
+  return(as.matrix(A))
+}
+data_generation = function(N=1000,p=10, no.reps=1, A=matrix(1, p,p)) {
   ##
   set.seed(2)
   Mu = matrix(runif(p, -1, 1), nrow = p, ncol = 1) 
-  Sigma = runif(p, -1, 1) / 2
-  Sigma = Sigma %*% t(Sigma)
-  diag(Sigma) = 0
+  sigma_values = runif(p*(p-1)/2, -1, 1) / 2
+  
+  Sigma = matrix(0, p,p)
+  Sigma[lower.tri(Sigma)] = sigma_values
+  
+  #apply graph structure on parameters
+  Sigma[A==0] = 0
+  
+  for (i in 1:(p-1)) {
+    for (j in (i+1):p) {
+      Sigma[i,j] = Sigma[j,i]
+    }
+  } 
   Theta = Sigma
   diag(Theta) = Mu
   Theta = Theta[lower.tri(Theta, diag=TRUE)]
@@ -411,7 +438,8 @@ pseudolikelihood = function(data) {
   ll = estimators$likelihood
   return(list(likelihood=ll, sigma_pl = sigma, mu_pl = mu, mse_sigma = mse_s, mse_mu = mse_m, se_mu = se_mu, se_sigma = se_sigma))
 }
-hessen = function(data, theta_0) {
+
+hessen = function(data, theta_0=matrix(0, p, p)) {
   N = nrow(data)
   O = t(data) %*% data * 2
   diag(O) = diag(O)/2
@@ -427,25 +455,8 @@ hessen = function(data, theta_0) {
     E_ss = matrix(0, nrow = p*(p+1)/2, ncol = p*(p+1)/2)
     
     
-    Z = 0
-    
-    for (i_row in 1:nrow(unique)) {
-      
-      y = ys[i_row,]
-      count = count+1
-      suf = 2 * y %*% t(y)
-      diag(suf) = diag(suf)/2
-      suf = suf[lower.tri(suf, diag=TRUE)]
-      
-      weight = as.numeric(exp(t(suf)%*%theta))
-      
-      Z = Z + weight
-      
-      E_suf = E_suf + suf * weight
-      
-      E_ss = E_ss + suf %*% t(suf) * weight
-    }
-    print(Z)
+    Z = 0.0
+    Z = hessenNorm(theta=theta, EsufH=E_suf, EssH=E_ss, ZH=Z, yH=ys)
     E_suf = E_suf/Z
     E_ss = E_ss/Z
     
@@ -493,7 +504,7 @@ hessen = function(data, theta_0) {
 
 
 
-exact_likelihood = function(data, theta_0) {
+exact_likelihood = function(data, theta_0=matrix(0, p, p)) {
   N = nrow(data)
   O = t(data) %*% data * 2
   diag(O) = diag(O)/2
@@ -552,61 +563,134 @@ exact_likelihood = function(data, theta_0) {
   return(list(likelihood=ll, mu_ML = mu_ml, sigma_ML = theta_l, mse_mu = mse_muML, mse_sigma = mse_sigML, SE_mu = SE_mu, SE_sigma = SE_sigma))
   
 }
+
+logistic_regression = function(data) {
+  p = ncol(data)
+  N = nrow(data)
+  theta = matrix(0, p, p)
+  df = data.frame(data)
+  print(df)
+  for (iter in 1:1e4) {
+    theta_old = theta
+    for (i in 1:p) {
+      logreg = glm(formula=df[,i]~., data=df[,-i], family=binomial(link="logit"))
+      pred = predict(logreg, type="response")
+      runifs = runif(N)
+      df[,i] = ifelse(pred > 0.5, 1, 0)
+      params = logreg$coefficients
+      theta[i, -i] = params[-1]
+      theta[i,i] = params[1]
+    }
+    print(df)
+    break
+    D = abs(sum(theta-theta_old))
+    if (D < sqrt(.Machine$double.eps))
+      break
+  }
+  return(theta)
+  
+}
+# test script
+run_test = function() {
+  data = data_generation()
+  p = ncol(x)
+  print(p)
+  pseu = pseudolikelihood(x)
+  
+  sigmapl = pseu$sigma_pl
+  sigmapl = sigmapl[lower.tri(sigmapl)]
+  mupl = pseu$mu_pl
+  thetapl = c(sigmapl, mupl)
+  print(p)
+  likelihood = exact_likelihood(data=x)
+  print(p)
+  sigmaml = likelihood$sigma_ML
+  sigmaml = sigmaml[lower.tri(sigmaml)]
+  print(sigmaml)
+  muml = likelihood$mu_ML
+  thetaml = c(sigmaml, muml)
+  
+  hessen = hessen(data=x)
+
+  sigmah = hessen$sigma_ML
+  sigmah = sigmah[lower.tri(sigmah)]
+  muh = hessen$mu_ML
+  thetah = c(sigmah, muh)
+  
+  theta_lr = logistic_regression(x)
+  
+  return(list(thetapl=thetapl,thetaml=thetaml, thetah=thetah))
+}
+data = data_generation(N=100, no.reps=10)
+x = data$X
+for (rep in 1:no.reps) {
+  
+}
+x = x[[1]]
+Mu = data$mu
+Sigma = data$sigma
+res = run_test()
+theta_h = res$thetah
+theta_ml = res$thetaml
+theta_pl = res$thetapl
+
 # #------ Actual performance of both the exact likelihood and the pseudolikelihood
-# n_list = c(200, 500, 1000, 5000)
-# l = length(n_list)
-# sigma_PL = sigma_ML = mu_PL = mu_ML = list()
-# Sigma_full = Mu_full = list()
-# no.reps = 10
-# for (i in 1:length(n_list)) {
-#   n = n_list[i]
-#   print(paste("N = ", n))
-#   data = data_generation(N=n, no.reps = no.reps)
-#   Mu = data$mu
-#   Sigma = data$sigma
-#   s_ml = s_pl = matrix(0, nrow=p*(p-1)/2, ncol=1)
-#   mu_ml = mu_pl = matrix(0, nrow=p, ncol=1)
-#   X = data$X
-#   for (rep in 1:no.reps) {
-#     x = X[[rep]]
-#     p = ncol(x)
-# 
-#     Mu_full[[i]] = Mu
-#     Sigma_full[[i]] = Sigma
-# 
-#     pseudo = pseudolikelihood(x)
-#     print("pseudolikelihood ended")
-#     sig_pl = pseudo$sigma_pl
-#     s_pl = s_pl + sig_pl[lower.tri(sig_pl, F)]
-#     m_pl = m_pl + pseudo$mu_pl
-#     theta_pl = sig_pl
-#     diag(theta_pl) = m_pl
-# 
-#     start_l = matrix(0, nrow=p, ncol=p)
-#     print(paste("p = ",p))
-#     likelihood = exact_likelihood(x, start_l)
-#     print("exact likelihood ended")
-#     sig_ml = likelihood$sigma_ML
-#     s_ml = s_ml + sig_ml[lower.tri(sig_ml, F)]
-#     m_ml = m_ml + likelihood$mu_ML
-#     hessen = hessen()
-#   }
-#   sigma_PL[[i]] = s_pl/no.reps
-#   mu_PL[[i]] = m_pl/no.reps
-#   sigma_ML[[i]] = s_ml/no.reps
-#   mu_ML[[i]] = m_ml/no.reps
-# }
+
+p_list = c(5, 7, 10, 15)
+l = length(p_list)
+sigma_PL = sigma_ML = mu_PL = mu_ML = list()
+Sigma_full = Mu_full = sigma_H = mu_H = list()
+no.reps = 1
+for (i in 1:length(p_list)) {
+  p = p_list[i]
+  print(paste("N = ", n))
+  data = data_generation(N=n, no.reps = no.reps, spars=0.5)
+  Mu = data$mu
+  Sigma = data$sigma
+  s_ml = s_pl = s_h = matrix(0, nrow=p*(p-1)/2, ncol=1)
+  mu_ml = mu_pl = mu_h = matrix(0, nrow=p, ncol=1)
+  X = data$X
+  for (rep in 1:no.reps) {
+    x = X[[rep]]
+    p = ncol(x)
+
+    Mu_full[[i]] = Mu
+    Sigma_full[[i]] = Sigma
+
+    pseudo = pseudolikelihood(x)
+    print("pseudolikelihood ended")
+    sig_pl = pseudo$sigma_pl
+    s_pl = s_pl + sig_pl[lower.tri(sig_pl, F)]
+    mu_pl = mu_pl + pseudo$mu_pl
+    theta_pl = sig_pl
+    diag(theta_pl) = mu_pl
+
+    start_l = matrix(0, nrow=p, ncol=p)
+    print(paste("p = ",p))
+    likelihood = exact_likelihood(x, start_l)
+    print("exact likelihood ended")
+    sig_ml = likelihood$sigma_ML
+    s_ml = s_ml + sig_ml[lower.tri(sig_ml, F)]
+    mu_ml = mu_ml + likelihood$mu_ML
+    hessen = hessen(x, start_l)
+    
+    sig_h = hessen$sigma_ML
+    s_h = s_h + sig_h[lower.tri(sig_h)]
+    mu_h = mu_h + hessen$mu_ML
+  }
+  sigma_PL[[i]] = s_pl/no.reps
+  mu_PL[[i]] = mu_pl/no.reps
+  sigma_ML[[i]] = s_ml/no.reps
+  mu_ML[[i]] =  mu_ml/no.reps
+  sigma_H[[i]] = s_h/no.reps
+}
+par(mfrow=c(2,2))
+sig_real = Sigma[lower.tri(Sigma)]
+for (i in 1:l) {
+  plot(sigma_PL[[i]], sig_real, main=paste("N=", n_list[i]), xlab="Sigma PL", ylab="Sigma H");abline(0,1)
+}
 # par(mfrow = c(2,2))
 # for (i in 1:l) {
 #   print(i)
 #   plot(c(sigma_PL[[i]], mu_PL[[i]]), c(Sigma_full[[i]], Mu_full[[i]]), main=paste("N =", n_list[i]), xlab="PL", ylab="True");abline(0,1)
-# }
-# 
-# data = data_generation(p=20)
-# X = data$X
-# Mu = 
-# p_list = 4:18
-# for (ind in 1:length(p_list)) {
-#   p = p_list[ind]
-#   data = data_generation()
 # }

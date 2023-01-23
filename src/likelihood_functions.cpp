@@ -68,6 +68,7 @@ double normalizingConstant(
   return Z;
 }
 
+// [[Rcpp::export]]
 double hessenNorm(
   NumericVector thetaH,
   NumericVector EsufH,
@@ -75,12 +76,14 @@ double hessenNorm(
   double ZH,
   IntegerMatrix yH
 ) {
-  int p = yH.length();
+  int p = yH.ncol();
+  cout << "p = " << p << endl;
   int nParam = p*(p+1)/2;
+  cout << "second test p =" << p<< endl;
   int nRow = yH.nrow();
   
   for (int row = 0; row < nRow; row ++) {
-    IntegerVector yHr = yH(row, _);
+    IntegerVector yHr = yH(row, _ );
     NumericVector suf( nParam );
     int counter = 0;
     for (int i = 0; i < p; i++) {

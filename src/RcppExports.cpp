@@ -25,6 +25,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// hessenNorm
+double hessenNorm(NumericVector thetaH, NumericVector EsufH, NumericMatrix EssH, double ZH, IntegerMatrix yH);
+RcppExport SEXP _pseudolikelihood_hessenNorm(SEXP thetaHSEXP, SEXP EsufHSEXP, SEXP EssHSEXP, SEXP ZHSEXP, SEXP yHSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type thetaH(thetaHSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type EsufH(EsufHSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type EssH(EssHSEXP);
+    Rcpp::traits::input_parameter< double >::type ZH(ZHSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type yH(yHSEXP);
+    rcpp_result_gen = Rcpp::wrap(hessenNorm(thetaH, EsufH, EssH, ZH, yH));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_hello_world
 List rcpp_hello_world();
 RcppExport SEXP _pseudolikelihood_rcpp_hello_world() {
@@ -38,6 +53,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_pseudolikelihood_normalizingConstant", (DL_FUNC) &_pseudolikelihood_normalizingConstant, 5},
+    {"_pseudolikelihood_hessenNorm", (DL_FUNC) &_pseudolikelihood_hessenNorm, 5},
     {"_pseudolikelihood_rcpp_hello_world", (DL_FUNC) &_pseudolikelihood_rcpp_hello_world, 0},
     {NULL, NULL, 0}
 };
