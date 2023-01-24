@@ -77,9 +77,7 @@ double hessenNorm(
   IntegerMatrix yH
 ) {
   int p = yH.ncol();
-  cout << "p = " << p << endl;
   int nParam = p*(p+1)/2;
-  cout << "second test p =" << p<< endl;
   int nRow = yH.nrow();
   
   for (int row = 0; row < nRow; row ++) {
