@@ -7,7 +7,7 @@ random_network = function(p, m) {
   return(as.matrix(A))
 }
 
-create_small_world = function(p, nei=1, pr=.1) {
+create_small_world = function(p, nei=2, pr=.1) {
   world = sample_smallworld(1, p, nei, pr)
   plot(world)
   A = as_adjacency_matrix(world)
@@ -23,7 +23,7 @@ scale_free_network = function(p=10, m=NULL) {
 
 data_generation = function(N=1000,p=10, no.reps=1, A=matrix(1, p,p)) {
   ##
-  set.seed(2)
+  set.seed(1)
   Mu = matrix(runif(p, -3, -1), nrow = p, ncol = 1) 
   sigma_values = runif(p*(p-1)/2, .75,1)
   
@@ -458,7 +458,6 @@ hessen = function(data, theta_0=matrix(0, p, p)) {
   
   SE_mu = SE[indices]
   SE_sigma = SE[-indices]
-  
   theta_l = theta
   
   theta_l = matrix(0, nrow=p, ncol=p)
@@ -565,19 +564,20 @@ logistic_regression = function(data) {
 
 #------ Actual performance of both the exact likelihood and the pseudolikelihood
 P_options = c( 10, 15)
-N_options = c(500, 1000)
-no.reps = 1
+N_options = c(200, 500, 1000)
+no.reps = 100
 
 real_mu_sw = list()
 real_sigma_sw = list()
 small_worlds = list()
+scale_frees = list()
 
 mu_pl = mu_ml = sigma_pl = sigma_ml = list()
 se_mu_pl = se_sig_pl = se_mu_ml = se_sig_ml = list()
 for (p_ind in 1:length(P_options)) {
   p = P_options[p_ind]
-  small_world = create_small_world(p)
-  small_worlds[[p_ind]] = small_world
+  scale_free = scale_free_network(p=p)
+  scale_frees[[p_ind]] = scale_free
 
   mu_pl[[p_ind]] = mu_ml[[p_ind]] = sigma_pl[[p_ind]] = sigma_ml[[p_ind]] = list()
   se_mu_pl[[p_ind]] = se_sig_pl[[p_ind]] = se_mu_ml[[p_ind]] = se_sig_ml[[p_ind]] = list()
@@ -586,7 +586,7 @@ for (p_ind in 1:length(P_options)) {
     n = N_options[n_ind]
     print(paste("N =", n))
     print(paste("p =", p))
-    data = data_generation(N=n, p=p, no.reps=no.reps, A=small_world)
+    data = data_generation(N=n, p=p, no.reps=no.reps, A=scale_free)
     X_list = data$X
     mu = data$mu
     sigma = data$sigma
