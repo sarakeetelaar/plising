@@ -2,21 +2,18 @@
 library(igraph)
 random_network = function(p, m) {
   gr = random.graph.game(p, m, type="gnm", loops=F)
-  plot(gr)
   A = as_adjacency_matrix(gr)
   return(as.matrix(A))
 }
 
 create_small_world = function(p, nei=2, pr=.1) {
   world = sample_smallworld(1, p, nei, pr)
-  plot(world)
   A = as_adjacency_matrix(world)
   return(as.matrix(A))
 }
 
 scale_free_network = function(p=10, m=NULL) {
   graph = barabasi.game(p, 1, m, directed=FALSE)
-  plot(graph)
   A = as_adjacency_matrix(graph)
   return(as.matrix(A))
 }
