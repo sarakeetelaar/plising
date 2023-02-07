@@ -69,6 +69,18 @@ double normalizingConstant(
 }
 
 // [[Rcpp::export]]
+NumericMatrix symmetrizeMatrix(NumericMatrix theta) {
+  int p = theta.ncol();
+  for (int ind1 = 0; ind1 < (p-1); ind1++) {
+    for (int ind2 = (ind1+1); ind2 < p; ind2++) {
+      theta(ind1, ind2) = (theta(ind1, ind2) + theta(ind2, ind1))/2;
+      theta(ind2, ind1) = theta(ind1, ind2);
+    }
+  }
+  return theta;
+}
+
+// [[Rcpp::export]]
 double hessenNorm(
   NumericVector thetaH,
   NumericVector EsufH,

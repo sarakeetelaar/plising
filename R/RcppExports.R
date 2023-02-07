@@ -5,6 +5,10 @@ normalizingConstant <- function(theta, Esuf, Ess, Z, y) {
     .Call(`_pseudolikelihood_normalizingConstant`, theta, Esuf, Ess, Z, y)
 }
 
+symmetrizeMatrix <- function(theta) {
+    .Call(`_pseudolikelihood_symmetrizeMatrix`, theta)
+}
+
 hessenNorm <- function(thetaH, EsufH, EssH, ZH, yH) {
     .Call(`_pseudolikelihood_hessenNorm`, thetaH, EsufH, EssH, ZH, yH)
 }

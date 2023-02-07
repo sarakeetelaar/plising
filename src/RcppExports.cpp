@@ -25,6 +25,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// symmetrizeMatrix
+NumericMatrix symmetrizeMatrix(NumericMatrix theta);
+RcppExport SEXP _pseudolikelihood_symmetrizeMatrix(SEXP thetaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type theta(thetaSEXP);
+    rcpp_result_gen = Rcpp::wrap(symmetrizeMatrix(theta));
+    return rcpp_result_gen;
+END_RCPP
+}
 // hessenNorm
 double hessenNorm(NumericVector thetaH, NumericVector EsufH, NumericMatrix EssH, double ZH, IntegerMatrix yH);
 RcppExport SEXP _pseudolikelihood_hessenNorm(SEXP thetaHSEXP, SEXP EsufHSEXP, SEXP EssHSEXP, SEXP ZHSEXP, SEXP yHSEXP) {
@@ -53,6 +64,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_pseudolikelihood_normalizingConstant", (DL_FUNC) &_pseudolikelihood_normalizingConstant, 5},
+    {"_pseudolikelihood_symmetrizeMatrix", (DL_FUNC) &_pseudolikelihood_symmetrizeMatrix, 1},
     {"_pseudolikelihood_hessenNorm", (DL_FUNC) &_pseudolikelihood_hessenNorm, 5},
     {"_pseudolikelihood_rcpp_hello_world", (DL_FUNC) &_pseudolikelihood_rcpp_hello_world, 0},
     {NULL, NULL, 0}

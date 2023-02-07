@@ -6,7 +6,7 @@ random_network = function(p, m) {
   return(as.matrix(A))
 }
 
-create_small_world = function(p, nei=2, pr=.1) {
+create_small_world = function(p, nei=1, pr=.1) {
   world = sample_smallworld(1, p, nei, pr)
   A = as_adjacency_matrix(world)
   return(as.matrix(A))
@@ -18,17 +18,15 @@ scale_free_network = function(p=10, m=NULL) {
   return(as.matrix(A))
 }
 
-data_generation = function(N=1000,p=10, no.reps=1, A=matrix(1, p,p)) {
+data_generation = function(N=1000,p=10, no.reps=1, A=NULL, Mu, sigma_values) {
   ##
-  set.seed(1)
-  Mu = matrix(runif(p, -3, -1), nrow = p, ncol = 1) 
-  sigma_values = runif(p*(p-1)/2, .75,1)/2
-  
+  set.seed(2)
   Sigma = matrix(0, p,p)
   Sigma[lower.tri(Sigma)] = sigma_values
   
   #apply graph structure on parameters
-  Sigma[A==0] = 0
+  if (!is.null(A))
+    Sigma[A==0] = 0
   
   for (i in 1:(p-1)) {
     for (j in (i+1):p) {
@@ -39,7 +37,7 @@ data_generation = function(N=1000,p=10, no.reps=1, A=matrix(1, p,p)) {
   
   for (r in 1: no.reps) {
     X = matrix(0, nrow=N, ncol=p)
-    for(iter in 1:1e3) {
+    for(iter in 1:1e2) {
       for(i in 1:p) {
         X[, i] = 1 * (rlogis(N) <= Mu[i] + 2 * X %*% Sigma[, i])
       }
@@ -402,72 +400,87 @@ optimize_pseudolikelihood <- function(x, iteration_max = 1e2, prior_var = Inf) {
 #estimators_pl = optimize_pseudolikelihood(X)
 
 pseudolikelihood = function(data) {
-  estimators = optimize_pseudolikelihood(data)
-  sigma = estimators$sigma
-  mu = estimators$mu
-  
-  se = estimators$se
-  p = length(mu)
-  se_mu = se[1:p]
-  se_sigma = se[-(1:p)]
-  ll = estimators$likelihood
-  return(list(sigma_pl = sigma, mu_pl = mu, se_mu = se_mu, se_sigma = se_sigma))
+  out = tryCatch(
+    {
+    estimators = optimize_pseudolikelihood(data)
+    sigma = estimators$sigma
+    mu = estimators$mu
+    
+    se = estimators$se
+    p = length(mu)
+    se_mu = se[1:p]
+    se_sigma = se[-(1:p)]
+    ll = estimators$likelihood
+    return(list(sigma_pl = sigma, mu_pl = mu, se_mu = se_mu, se_sigma = se_sigma))
+  },
+  error = function(cond) {
+    message(cond)
+    return(NA)
+  }
+  )
 }
 
 hessen = function(data, theta_0=matrix(0, p, p)) {
-  N = nrow(data)
-  O = t(data) %*% data * 2
-  diag(O) = diag(O)/2
-  O = O[lower.tri(O, diag=TRUE)]
-  
-  ys = unique(data)
-  p = ncol(data)
-  theta = theta_0[lower.tri(theta_0, diag=TRUE)]
-  for(iter in 1:1e3) {
-    theta_old = theta
-    
-    E_suf = matrix(0, nrow = p*(p+1)/2, ncol=1)
-    E_ss = matrix(0, nrow = p*(p+1)/2, ncol = p*(p+1)/2)
-    
-    
-    Z = 0.0
-    Z = hessenNorm(theta=theta, EsufH=E_suf, EssH=E_ss, ZH=Z, yH=ys)
-    E_suf = E_suf/Z
-    E_ss = E_ss/Z
-    
-    H = -N * (E_ss - E_suf %*% t(E_suf))
-    
-    grad = O - N*E_suf
-    
-    
-    theta = theta - solve(H)%*%grad
-    
-    ll = t(O) %*% theta - N * log(Z)
-    D = sum(abs(theta-theta_old))
-    if(D < sqrt(.Machine$double.eps)) {
-      break
+  out = tryCatch( 
+    {
+      N = nrow(data)
+      O = t(data) %*% data * 2
+      diag(O) = diag(O)/2
+      O = O[lower.tri(O, diag=TRUE)]
+      
+      ys = unique(data)
+      p = ncol(data)
+      theta = theta_0[lower.tri(theta_0, diag=TRUE)]
+      for(iter in 1:1e3) {
+        theta_old = theta
+        
+        E_suf = matrix(0, nrow = p*(p+1)/2, ncol=1)
+        E_ss = matrix(0, nrow = p*(p+1)/2, ncol = p*(p+1)/2)
+        
+        
+        Z = 0.0
+        Z = hessenNorm(theta=theta, EsufH=E_suf, EssH=E_ss, ZH=Z, yH=ys)
+        E_suf = E_suf/Z
+        E_ss = E_ss/Z
+        
+        H = -N * (E_ss - E_suf %*% t(E_suf))
+        grad = O - N*E_suf
+        
+        
+        theta = theta - solve(H)%*%grad
+        
+        ll = t(O) %*% theta - N * log(Z)
+        D = sum(abs(theta-theta_old))
+        if(D < sqrt(.Machine$double.eps)) {
+          break
+        }
+      }
+      #SE = sqrt(diag(solve(-H)))
+      SE = diag(solve(-H))
+      indices = re_index(p)
+      
+      SE_mu = SE[indices]
+      SE_sigma = SE[-indices]
+      theta_l = theta
+      
+      theta_l = matrix(0, nrow=p, ncol=p)
+      theta_l[lower.tri(theta_l,diag=TRUE)] = theta
+      
+      for (i in 1:(p-1)) {
+        for (j in (i+1): p) {
+          theta_l[i,j] = theta_l[j,i]
+        }
+      }
+      mu_ml = diag(theta_l)
+      diag(theta_l) = 0
+      
+      return(list(likelihood=ll, mu_ML = mu_ml, sigma_ML = theta_l, SE_mu = SE_mu, SE_sigma = SE_sigma))
+    },
+    error = function(cond) {
+      message(cond)
+      return(NA)
     }
-  }
-  #SE = sqrt(diag(solve(-H)))
-  SE = diag(solve(-H))
-  indices = re_index(p)
-  
-  SE_mu = SE[indices]
-  SE_sigma = SE[-indices]
-  theta_l = theta
-  
-  theta_l = matrix(0, nrow=p, ncol=p)
-  theta_l[lower.tri(theta_l,diag=TRUE)] = theta
-  
-  for (i in 1:(p-1)) {
-    for (j in (i+1): p) {
-      theta_l[i,j] = theta_l[j,i]
-    }
-  }
-  mu_ml = diag(theta_l)
-  diag(theta_l) = 0
-  
-  return(list(likelihood=ll, mu_ML = mu_ml, sigma_ML = theta_l, SE_mu = SE_mu, SE_sigma = SE_sigma))
+  )
   
 }
 
@@ -475,91 +488,88 @@ hessen = function(data, theta_0=matrix(0, p, p)) {
 
 
 exact_likelihood = function(data, theta_0=matrix(0, p, p)) {
-  N = nrow(data)
-  O = t(data) %*% data * 2
-  diag(O) = diag(O)/2
-  O = O[lower.tri(O, diag=TRUE)]
-  
-  p = ncol(data)
-  theta = theta_0[lower.tri(theta_0, diag=TRUE)]
-  for(iter in 1:1e3) {
-    theta_old = theta
+  out = tryCatch({
+    N = nrow(data)
+    O = t(data) %*% data * 2
+    diag(O) = diag(O)/2
+    O = O[lower.tri(O, diag=TRUE)]
     
-    E_suf = matrix(0, nrow = p*(p+1)/2, ncol=1)
-    E_ss = matrix(0, nrow = p*(p+1)/2, ncol = p*(p+1)/2)
-    
-    
-    Z = 0.0
-    y = matrix(0, nrow = p, ncol = 1)
-    Z = normalizingConstant(theta, E_suf, E_ss, Z, y)
-    
-    E_suf = E_suf/Z
-    E_ss = E_ss/Z
-    
-    H = -N * (E_ss - E_suf %*% t(E_suf))
-    grad = O - N*E_suf
-    
-    theta = theta - solve(H)%*%grad
-    ll = t(O) %*% theta - N * log(Z)
-    D = sum(abs(theta-theta_old))
-    if(D < sqrt(.Machine$double.eps)) {
-      break
+    p = ncol(data)
+    theta = theta_0[lower.tri(theta_0, diag=TRUE)]
+    for(iter in 1:1e3) {
+      theta_old = theta
+      
+      E_suf = matrix(0, nrow = p*(p+1)/2, ncol=1)
+      E_ss = matrix(0, nrow = p*(p+1)/2, ncol = p*(p+1)/2)
+      
+      
+      Z = 0.0
+      y = matrix(0, nrow = p, ncol = 1)
+      Z = normalizingConstant(theta, E_suf, E_ss, Z, y)
+      
+      E_suf = E_suf/Z
+      E_ss = E_ss/Z
+      
+      H = -N * (E_ss - E_suf %*% t(E_suf))
+      grad = O - N*E_suf
+      
+      theta = theta - solve(H)%*%grad
+      ll = t(O) %*% theta - N * log(Z)
+      D = sum(abs(theta-theta_old))
+      if(D < sqrt(.Machine$double.eps)) {
+        break
+      }
     }
-  }
-  #SE = sqrt(diag(solve(-H)))
-  ll_value = ll
-  SE = diag(solve(-H))
-  indices = re_index(p)
-  
-  SE_mu = SE[indices]
-  SE_sigma = SE[-indices]
-  
-  theta_l = theta
-  theta_l = matrix(0, nrow=p, ncol=p)
-  theta_l[lower.tri(theta_l,diag=TRUE)] = theta
-  
-  for (i in 1:(p-1)) {
-    for (j in (i+1): p) {
-      theta_l[i,j] = theta_l[j,i]
+    #SE = sqrt(diag(solve(-H)))
+    ll_value = ll
+    SE = diag(solve(-H))
+    indices = re_index(p)
+    
+    SE_mu = SE[indices]
+    SE_sigma = SE[-indices]
+    
+    theta_l = theta
+    theta_l = matrix(0, nrow=p, ncol=p)
+    theta_l[lower.tri(theta_l,diag=TRUE)] = theta
+    
+    for (i in 1:(p-1)) {
+      for (j in (i+1): p) {
+        theta_l[i,j] = theta_l[j,i]
+      }
     }
+    mu_ml = diag(theta_l)
+    diag(theta_l) = 0
+    
+    return(list(mu_ML = mu_ml, sigma_ML = theta_l, SE_mu = SE_mu, SE_sigma = SE_sigma))
+  },
+  error = function(cond) {
+    message(cond)
+    return(NA)
   }
-  mu_ml = diag(theta_l)
-  diag(theta_l) = 0
-  
-  return(list(mu_ML = mu_ml, sigma_ML = theta_l, SE_mu = SE_mu, SE_sigma = SE_sigma))
-  
+  )
 }
 
 logistic_regression = function(data) {
   p = ncol(data)
   N = nrow(data)
-  theta = matrix(0, p, p)
+  sigma = matrix(0, p, p)
+  mu = matrix(0, p, 1)
   df = data.frame(data)
-  print(df)
-  for (iter in 1:1e4) {
-    theta_old = theta
-    for (i in 1:p) {
-      logreg = glm(formula=df[,i]~., data=df[,-i], family=binomial(link="logit"))
-      pred = predict(logreg, type="response")
-      runifs = runif(N)
-      df[,i] = ifelse(pred > 0.5, 1, 0)
-      params = logreg$coefficients
-      theta[i, -i] = params[-1]
-      theta[i,i] = params[1]
-    }
-    print(df)
-    break
-    D = abs(sum(theta-theta_old))
-    if (D < sqrt(.Machine$double.eps))
-      break
+  for (i in 1:p) {
+    logreg = glm(formula=df[,i]~., data=df[,-i], family=binomial(link="logit"))
+    params = logreg$coefficients
+    sigma[i, -i] = params[-1]
+    mu[i] = params[1]
   }
-  return(theta)
+  sigma = symmetrizeMatrix(sigma)
+
+  return(list(mu=mu, sigma=sigma))
   
 }
 
 #function performance of the pseudolikelihood
 # now only implemented for the scale free graph
-perform_comparison = function(p_options, N_options, no.reps) {
+perform_comparison = function(p_options, N_options, no.reps, graph_type='full', frac=NULL) {
   sz_p = length(p_options)
   sz_N = length(N_options)
   
@@ -573,17 +583,46 @@ perform_comparison = function(p_options, N_options, no.reps) {
   var_mu_pl = var_sig_pl = var_mu_ml = var_sig_ml = list()
   
   for (p_ind in 1:sz_p) {
-    scale_free = scale_free_network(p=p)
-    graphs[[p_ind]] = scale_free
+    p = p_options[p_ind]
+    if (graph_type == 'sf') {
+      graphs[[p_ind]] = scale_free_network(p=p)
+    }
+    else if (graph_type == 'sm') {
+      graphs[[p_ind]] = create_small_world(p=p)
+    }
+    else if (graph_type=='empty') {
+      graphs[[p_ind]] = matrix(0, p, p)
+    }
+    else if (!is.null(frac)) {
+      gr = rbinom(p*(p-1)/2, 1, frac)
+      g = matrix(0, p, p)
+      g[lower.tri(g)] = gr
+      for (i in 1:(p-1)) {
+        for (j in (i+1):p) {
+          g[i,j] = g[j,i]
+        }
+      }
+      graphs[[p_ind]] = g
+    }
+    else {
+      g = matrix(1, p, p)
+      diag(g) = 0
+      graphs[[p_ind]] = g
+    }
+    
+    mu = runif(p, -1,1)
+    sigma_val = matrix(runif(p*(p-1)/2, -1, 1)/2, nrow=p*(p-1)/2, ncol=1)
     # sw = create_small_world(p=p)
     # small_worlds[[p_ind]] = sw
     
     mu_pl[[p_ind]] = mu_ml[[p_ind]] = sigma_pl[[p_ind]] = sigma_ml[[p_ind]] = list()
-    se_mu_pl[[p_ind]] = se_sig_pl[[p_ind]] = se_mu_ml[[p_ind]] = se_sig_ml[[p_ind]] = list()
+    var_mu_pl[[p_ind]] = var_sig_pl[[p_ind]] = var_mu_ml[[p_ind]] = var_sig_ml[[p_ind]] = list()
     
     for (n_ind in 1:sz_N) {
+
       n = N_options[n_ind]
-      data = data_generation(N=n, p=p, no.reps=no.reps, A=scale_free)
+      print(paste("p =", p, "n =", n))
+      data = data_generation(N=n, p=p, no.reps=no.reps, Mu=mu, sigma_values=sigma_val, A=graphs[[p_ind]])
       X_list = data$X
       mu = data$mu
       sigma = data$sigma
@@ -620,6 +659,8 @@ perform_comparison = function(p_options, N_options, no.reps) {
         se_mu_ML = se_mu_ML + likeli$SE_mu/no.reps
         se_sig_ML = se_sig_ML + likeli$SE_sigma/no.reps
         
+        
+        
       }
       mu_pl[[p_ind]][[n_ind]] = mu_PL
       sigma_pl[[p_ind]][[n_ind]] = sig_PL
@@ -635,6 +676,6 @@ perform_comparison = function(p_options, N_options, no.reps) {
   }
   return(list(sigma_true=real_sigma, mu_true=real_mu, mu_pl=mu_pl, sigma_pl=sigma_pl,
               mu_ml=mu_ml, sigma_ml=sigma_ml, var_mu_pl=var_mu_pl, var_sigma_pl=var_sig_pl,
-              var_mu_ml=var_mu_ml, var_sigma_ml=var_sig_ml))
-} 
+              var_mu_ml=var_mu_ml, var_sigma_ml=var_sig_ml, graphs=graphs))
+}
 
