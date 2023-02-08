@@ -91,51 +91,6 @@ compare_all = function(N, p, no.reps, mu_val, sigma_val, graph=NULL) {
               pl_var=dif_pl, ml_var=dif_ml, hes_var=dif_h, lr_var=dif_lr))
 }
 
-p_list = c(5, 10, 15)
-N_list = c(50, 100, 1000)
-thetapl = thetaml = thetah = thetalr = list()
-diffpl = diffml = diffhes = difflr = list()
-theta_true = list()
-
-for (ip in 1:length(p_list)) {
-  thetaPL = thetaML = thetaH = thetaLR = list()
-  diffPL = diffML = diffH = diffLR = list()
-
-  p = p_list[ip]
-
-  mu = runif(p, -1,1)
-  sig_val = runif(p*(p-1)/2, -1, 1)/2
-  theta = matrix(0, p,p)
-  theta[lower.tri(theta)] = sig_val
-  diag(theta) = mu
-  theta = theta[lower.tri(theta, diag=T)]
-  theta_true[[ip]] = theta
-  for (i_n in 1:length(N_list)) {
-
-    n = N_list[i_n]
-    results = compare_all(N=n, p=p, no.reps=100, mu=mu, sigma_val=sig_val)
-    thetaPL[[i_n]] = results$pl
-    thetaML[[i_n]] = results$ml
-    thetaH[[i_n]] = results$hes
-    thetaLR[[i_n]] = results$lr
-
-    diffPL[[i_n]] = results$pl_var
-    diffML[[i_n]] = results$ml_var
-    diffH[[i_n]] = results$h_var
-    diffLR[[i_n]] = results$lr_var
-  }
-
-  diffpl[[ip]] = diffPL
-  diffml[[ip]] = diffML
-  diffhes[[ip]] = diffH
-  difflr[[ip]] = diffLR
-
-  thetapl[[ip]] = thetaPL
-  thetaml[[ip]] = thetaML
-  thetah[[ip]] = thetaH
-  thetalr[[ip]] = thetaLR
-}
-
 #for full graph
 comparison_complete_graph = function(n_list, p_list) {
   thetapl = thetaml = thetah = thetalr = list()
@@ -180,7 +135,7 @@ comparison_complete_graph = function(n_list, p_list) {
     thetah[[ip]] = thetaH
     thetalr[[ip]] = thetaLR
   }
-  return(est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
+  return(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
          var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr)
 }
 
@@ -229,7 +184,7 @@ comparison_random_graph = function(n_list, p_list, degree) {
     thetah[[ip]] = thetaH
     thetalr[[ip]] = thetaLR
   }
-  return(est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
+  return(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
          var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr)
 }
 
@@ -278,7 +233,7 @@ comparison_small_world = function(n_list, p_list, nei, pr) {
     thetah[[ip]] = thetaH
     thetalr[[ip]] = thetaLR
   }
-  return(est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
+  return(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
          var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr)
 }
 
@@ -326,6 +281,6 @@ comparison_empty_graph = function(n_list, p_list) {
     thetah[[ip]] = thetaH
     thetalr[[ip]] = thetaLR
   }
-  return(est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
+  return(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
          var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr)
 }
