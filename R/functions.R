@@ -342,57 +342,62 @@ multidimensional_update <- function(x, sigma, index, suff_stat, prior_var = Inf)
 }
 
 optimize_pseudolikelihood <- function(x, iteration_max = 1e2, prior_var = Inf) {
-  
-  p <- ncol(x)
-  n <- nrow(x)
-  # parameter matrix and sufficient statistics 
-  sigma <- matrix(0, nrow = p, ncol = p)
-  suff_stat <- t(x) %*% x
-  
-  # compute starting values 
-  for(iteration in 1:5) {
-    sigma <- onedimensional_update(sigma = sigma,
-                                   x = x,
-                                   suff_stat = suff_stat,
-                                   prior_var = prior_var)
-  }
-  
-  log_pseudolikelihood <- log_pseudolikelihood(sigma = sigma,
-                                               x = x)
-  
-  # index allows us to convert sigma (matrix) to eta (vector) and revert back -
-  index <- indexing (p)
-  
-  log_pseudolikelihood_storage <- c()
-  
-  for(iteration in 1:iteration_max) {
-    # update pseudolikelihood parameters 
-    updated <- multidimensional_update(sigma = sigma,
-                                       index = index,
-                                       x = x,
-                                       suff_stat = suff_stat,
-                                       prior_var = prior_var)
-    sigma = updated$sigma
+  out = tryCatch(
+    {
+    p <- ncol(x)
+    n <- nrow(x)
+    # parameter matrix and sufficient statistics 
+    sigma <- matrix(0, nrow = p, ncol = p)
+    suff_stat <- t(x) %*% x
     
-    # update log of pseudolikelihood
-    log_pseudolikelihood_old <- log_pseudolikelihood
+    # compute starting values 
+    for(iteration in 1:5) {
+      sigma <- onedimensional_update(sigma = sigma,
+                                     x = x,
+                                     suff_stat = suff_stat,
+                                     prior_var = prior_var)
+    }
+    
     log_pseudolikelihood <- log_pseudolikelihood(sigma = sigma,
                                                  x = x)
-    log_pseudolikelihood_storage[iteration] <- log_pseudolikelihood #store the pseudolik values for later
     
-    difference <- abs(log_pseudolikelihood - log_pseudolikelihood_old)
-    if(difference < sqrt(.Machine$double.eps)) break
+    # index allows us to convert sigma (matrix) to eta (vector) and revert back -
+    index <- indexing (p)
     
-    if(iteration == iteration_max)
-      warning(paste("The optimization procedure did not convergence in", iteration_max, "iterations.",
-                    sep = " "), call. = FALSE)
-  }
-  ll = log_pseudolikelihood
-  se <- updated$SE
-  mu <- diag(sigma)
-  diag(sigma) <- 0
-  sigma = sigma/2
-  return(list(likelihood=ll,se =se, mu = mu, sigma = sigma))
+    log_pseudolikelihood_storage <- c()
+    
+    for(iteration in 1:iteration_max) {
+      # update pseudolikelihood parameters 
+      updated <- multidimensional_update(sigma = sigma,
+                                         index = index,
+                                         x = x,
+                                         suff_stat = suff_stat,
+                                         prior_var = prior_var)
+      sigma = updated$sigma
+      
+      # update log of pseudolikelihood
+      log_pseudolikelihood_old <- log_pseudolikelihood
+      log_pseudolikelihood <- log_pseudolikelihood(sigma = sigma,
+                                                   x = x)
+      log_pseudolikelihood_storage[iteration] <- log_pseudolikelihood #store the pseudolik values for later
+      
+      difference <- abs(log_pseudolikelihood - log_pseudolikelihood_old)
+      if(difference < sqrt(.Machine$double.eps)) break
+      
+      if(iteration == iteration_max)
+        warning(paste("The optimization procedure did not convergence in", iteration_max, "iterations.",
+                      sep = " "), call. = FALSE)
+    }
+    ll = log_pseudolikelihood
+    se <- updated$SE
+    mu <- diag(sigma)
+    diag(sigma) <- 0
+    sigma = sigma/2
+    return(list(likelihood=ll,se =se, mu = mu, sigma = sigma))
+  },
+  error = function(cond) {
+    return(NA)
+  })
   
 }
 
@@ -414,7 +419,6 @@ pseudolikelihood = function(data) {
     return(list(sigma_pl = sigma, mu_pl = mu, se_mu = se_mu, se_sigma = se_sigma))
   },
   error = function(cond) {
-    message(cond)
     return(NA)
   }
   )
@@ -477,7 +481,6 @@ hessen = function(data, theta_0=matrix(0, p, p)) {
       return(list(likelihood=ll, mu_ML = mu_ml, sigma_ML = theta_l, SE_mu = SE_mu, SE_sigma = SE_sigma))
     },
     error = function(cond) {
-      message(cond)
       return(NA)
     }
   )
@@ -543,139 +546,32 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p)) {
     return(list(mu_ML = mu_ml, sigma_ML = theta_l, SE_mu = SE_mu, SE_sigma = SE_sigma))
   },
   error = function(cond) {
-    message(cond)
     return(NA)
   }
   )
 }
 
 logistic_regression = function(data) {
-  p = ncol(data)
-  N = nrow(data)
-  sigma = matrix(0, p, p)
-  mu = matrix(0, p, 1)
-  df = data.frame(data)
-  for (i in 1:p) {
-    logreg = glm(formula=df[,i]~., data=df[,-i], family=binomial(link="logit"))
-    params = logreg$coefficients
-    sigma[i, -i] = params[-1]
-    mu[i] = params[1]
-  }
-  sigma = symmetrizeMatrix(sigma)
+  out = tryCatch(
+    {
+    p = ncol(data)
+    N = nrow(data)
+    sigma = matrix(0, p, p)
+    mu = matrix(0, p, 1)
+    df = data.frame(data)
+    for (i in 1:p) {
+      logreg = glm(formula=df[,i]~., data=df[,-i], family=binomial(link="logit"))
+      params = logreg$coefficients
+      sigma[i, -i] = params[-1]
+      mu[i] = params[1]
+    }
+    sigma = symmetrizeMatrix(sigma)
 
-  return(list(mu=mu, sigma=sigma))
+    return(list(mu=mu, sigma=sigma))
+    },
+    error = function(cond){
+      return(NA)
+    }
+  )
   
 }
-
-#function performance of the pseudolikelihood
-# now only implemented for the scale free graph
-perform_comparison = function(p_options, N_options, no.reps, graph_type='full', frac=NULL) {
-  sz_p = length(p_options)
-  sz_N = length(N_options)
-  
-  # to be adjusted
-  graphs = list()
-  
-  real_mu= list()
-  real_sigma = list()
-  
-  mu_pl = mu_ml = sigma_pl = sigma_ml = list()
-  var_mu_pl = var_sig_pl = var_mu_ml = var_sig_ml = list()
-  
-  for (p_ind in 1:sz_p) {
-    p = p_options[p_ind]
-    if (graph_type == 'sf') {
-      graphs[[p_ind]] = scale_free_network(p=p)
-    }
-    else if (graph_type == 'sm') {
-      graphs[[p_ind]] = create_small_world(p=p)
-    }
-    else if (graph_type=='empty') {
-      graphs[[p_ind]] = matrix(0, p, p)
-    }
-    else if (!is.null(frac)) {
-      gr = rbinom(p*(p-1)/2, 1, frac)
-      g = matrix(0, p, p)
-      g[lower.tri(g)] = gr
-      for (i in 1:(p-1)) {
-        for (j in (i+1):p) {
-          g[i,j] = g[j,i]
-        }
-      }
-      graphs[[p_ind]] = g
-    }
-    else {
-      g = matrix(1, p, p)
-      diag(g) = 0
-      graphs[[p_ind]] = g
-    }
-    
-    mu = runif(p, -1,1)
-    sigma_val = matrix(runif(p*(p-1)/2, -1, 1)/2, nrow=p*(p-1)/2, ncol=1)
-    # sw = create_small_world(p=p)
-    # small_worlds[[p_ind]] = sw
-    
-    mu_pl[[p_ind]] = mu_ml[[p_ind]] = sigma_pl[[p_ind]] = sigma_ml[[p_ind]] = list()
-    var_mu_pl[[p_ind]] = var_sig_pl[[p_ind]] = var_mu_ml[[p_ind]] = var_sig_ml[[p_ind]] = list()
-    
-    for (n_ind in 1:sz_N) {
-
-      n = N_options[n_ind]
-      print(paste("p =", p, "n =", n))
-      data = data_generation(N=n, p=p, no.reps=no.reps, Mu=mu, sigma_values=sigma_val, A=graphs[[p_ind]])
-      X_list = data$X
-      mu = data$mu
-      sigma = data$sigma
-      
-      if (n_ind == 1) {
-        real_mu[[p_ind]] = mu
-        real_sigma[[p_ind]] = sigma
-      }
-      
-      mu_PL = mu_ML = matrix(0, p, 1)
-      sig_PL = sig_ML = matrix(0, p*(p-1)/2, 1)
-      se_mu_PL = se_mu_ML = matrix(0, p, 1)
-      se_sig_PL = se_sig_ML = matrix(0, p*(p-1)/2, 1)
-      
-      for (rep in 1:no.reps) {
-        x = X_list[[rep]]
-        pseudo = pseudolikelihood(x)
-        print("pseudolikelihood finished")
-        sigpl = pseudo$sigma_pl
-        mupl = pseudo$mu_pl
-        mu_PL = mu_PL + mupl/no.reps
-        sig_PL = sig_PL + sigpl[lower.tri(sigpl)]/no.reps
-        se_mu_PL = se_mu_PL + pseudo$se_mu/no.reps
-        se_sig_PL = se_sig_PL + pseudo$se_sigma/no.reps
-        
-        diag(sigpl) = mupl
-        likeli = exact_likelihood(x, sigpl)
-        print("likelihood finished")
-        sigml = likeli$sigma_ML
-        muml = likeli$mu_ML
-        
-        sig_ML = sig_ML + sigml[lower.tri(sigml)]/no.reps
-        mu_ML = mu_ML + muml/no.reps
-        se_mu_ML = se_mu_ML + likeli$SE_mu/no.reps
-        se_sig_ML = se_sig_ML + likeli$SE_sigma/no.reps
-        
-        
-        
-      }
-      mu_pl[[p_ind]][[n_ind]] = mu_PL
-      sigma_pl[[p_ind]][[n_ind]] = sig_PL
-      mu_ml[[p_ind]][[n_ind]] = mu_ML
-      sigma_ml[[p_ind]][[n_ind]] = sig_ML
-      
-      var_mu_pl[[p_ind]][[n_ind]] = se_mu_PL
-      var_sig_pl[[p_ind]][[n_ind]] = se_sig_PL
-      var_mu_ml[[p_ind]][[n_ind]] = se_mu_ML
-      var_sig_ml[[p_ind]][[n_ind]] = se_sig_ML
-    }
-    
-  }
-  return(list(sigma_true=real_sigma, mu_true=real_mu, mu_pl=mu_pl, sigma_pl=sigma_pl,
-              mu_ml=mu_ml, sigma_ml=sigma_ml, var_mu_pl=var_mu_pl, var_sigma_pl=var_sig_pl,
-              var_mu_ml=var_mu_ml, var_sigma_ml=var_sig_ml, graphs=graphs))
-}
-
