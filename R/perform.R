@@ -152,11 +152,6 @@ comparison_random_graph = function(n_list, p_list, degree) {
     
     mu = runif(p, -1,1)
     sig_val = runif(p*(p-1)/2, -1, 1)/2
-    theta = matrix(0, p,p)
-    theta[lower.tri(theta)] = sig_val
-    diag(theta) = mu
-    theta = theta[lower.tri(theta, diag=T)]
-    theta_true[[ip]] = theta
     A = random_network(p=p, m=p*degree)
     
     for (i_n in 1:length(N_list)) {
@@ -172,6 +167,10 @@ comparison_random_graph = function(n_list, p_list, degree) {
       diffML[[i_n]] = results$ml_var
       diffH[[i_n]] = results$h_var
       diffLR[[i_n]] = results$lr_var
+      
+      if (i_n == 1) {
+        theta_true[[ip]] = results$theta
+      }
     }
     
     diffpl[[ip]] = diffPL
@@ -201,11 +200,6 @@ comparison_small_world = function(n_list, p_list, nei, pr) {
     
     mu = runif(p, -1,1)
     sig_val = runif(p*(p-1)/2, -1, 1)/2
-    theta = matrix(0, p,p)
-    theta[lower.tri(theta)] = sig_val
-    diag(theta) = mu
-    theta = theta[lower.tri(theta, diag=T)]
-    theta_true[[ip]] = theta
     
     A = create_small_world(p, nei, pr)
     for (i_n in 1:length(N_list)) {
@@ -221,6 +215,10 @@ comparison_small_world = function(n_list, p_list, nei, pr) {
       diffML[[i_n]] = results$ml_var
       diffH[[i_n]] = results$h_var
       diffLR[[i_n]] = results$lr_var
+      
+      if (i_n == 1) {
+        theta_true[[ip]] = results$theta
+      }
     }
     
     diffpl[[ip]] = diffPL
@@ -251,11 +249,6 @@ comparison_empty_graph = function(n_list, p_list) {
     A = matrix(0, p, p)
     mu = runif(p, -1,1)
     sig_val = runif(p*(p-1)/2, -1, 1)/2
-    theta = matrix(0, p,p)
-    theta[lower.tri(theta)] = sig_val
-    diag(theta) = mu
-    theta = theta[lower.tri(theta, diag=T)]
-    theta_true[[ip]] = theta
     for (i_n in 1:length(N_list)) {
       
       n = N_list[i_n]
@@ -269,6 +262,10 @@ comparison_empty_graph = function(n_list, p_list) {
       diffML[[i_n]] = results$ml_var
       diffH[[i_n]] = results$h_var
       diffLR[[i_n]] = results$lr_var
+      
+      if (i_n == 1) {
+        theta_true[[ip]] = results$theta
+      }
     }
     
     diffpl[[ip]] = diffPL
