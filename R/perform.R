@@ -281,3 +281,24 @@ comparison_empty_graph = function(n_list, p_list) {
   return(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
          var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr)
 }
+
+pl_comparison_plots(results, pind, nind, poptions, noptions) {
+  p = poptions[pind]
+  n = noptions[nind]
+  
+  pl = results$est_pl[[pind]][[nind]]
+  ml = results$est_ml[[pind]][[nind]]
+  hes = results$est_hes[[pind]][[nind]]
+  lr = results$est_lr[[pind]][[nind]]
+  real = results$theta[[pind]]
+  
+  muind = re_index(p)
+  cols = rep('black', length(pl))
+  cols[muind] = 'red'
+  par(mfrow=c(2,2))
+  plot(pl, real, xlab="PL", ylab="theta", main="true value", col=cols);abline(0,1)
+  plot(pl, ml, xlab="PL", ylab="ML", main="exact likelihood", col=cols);abline(0,1)
+  plot(pl, hes, xlab="PL", ylab="hessen", main="hessen", col=cols);abline(0,1)
+  plot(pl, lr, xlab="PL", ylab="LR", main = "logistic regression", col=cols);abline(0,1)
+  mtext(paste("p =", p, ", N =", N), side=3, line=-2, outer=T)
+}
