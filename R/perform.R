@@ -135,8 +135,8 @@ comparison_complete_graph = function(n_list, p_list) {
     thetah[[ip]] = thetaH
     thetalr[[ip]] = thetaLR
   }
-  return(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
-         var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr)
+  return(list(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
+         var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr))
 }
 
 comparison_random_graph = function(n_list, p_list, degree) {
@@ -153,11 +153,11 @@ comparison_random_graph = function(n_list, p_list, degree) {
     mu = runif(p, -1,1)
     sig_val = runif(p*(p-1)/2, -1, 1)/2
     A = random_network(p=p, m=p*degree)
-    
-    for (i_n in 1:length(N_list)) {
+    print(A)
+    for (i_n in 1:length(n_list)) {
       
-      n = N_list[i_n]
-      results = compare_all(N=n, p=p, no.reps=100, mu=mu, sigma_val=sig_val, graph=A)
+      n = n_list[i_n]
+      results = compare_all(N=n, p=p, no.reps=10, mu=mu, sigma_val=sig_val, graph=A)
       thetaPL[[i_n]] = results$pl
       thetaML[[i_n]] = results$ml
       thetaH[[i_n]] = results$hes
@@ -183,8 +183,8 @@ comparison_random_graph = function(n_list, p_list, degree) {
     thetah[[ip]] = thetaH
     thetalr[[ip]] = thetaLR
   }
-  return(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
-         var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr)
+  return(list(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
+         var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr))
 }
 
 comparison_small_world = function(n_list, p_list, nei, pr) {
@@ -231,8 +231,8 @@ comparison_small_world = function(n_list, p_list, nei, pr) {
     thetah[[ip]] = thetaH
     thetalr[[ip]] = thetaLR
   }
-  return(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
-         var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr)
+  return(list(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
+         var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr))
 }
 
 comparison_empty_graph = function(n_list, p_list) {
@@ -278,11 +278,46 @@ comparison_empty_graph = function(n_list, p_list) {
     thetah[[ip]] = thetaH
     thetalr[[ip]] = thetaLR
   }
-  return(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
-         var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr)
+  return(list(theta=theta_true, est_pl=thetapl, est_ml=thetaml, est_hes=thetah, est_lr=thetalr,
+         var_pl=diffpl, var_ml=diffml, var_hes=diffhes, var_lr=difflr))
 }
 
-pl_comparison_plots(results, pind, nind, poptions, noptions) {
+comparison_plots = function(results, pind, nind, poptions, noptions) {
+  p = poptions[pind]
+  n = noptions[nind]
+  
+  pl = results$est_pl[[pind]][[nind]]
+  ml = results$est_ml[[pind]][[nind]]
+  hes = results$est_hes[[pind]][[nind]]
+  lr = results$est_lr[[pind]][[nind]]
+  real = results$theta[[pind]]
+  
+  muind = re_index(p)
+  cols = rep('black', length(pl))
+  cols[muind] = 'red'
+  par(mfrow=c(2,2), xpd=F)
+  
+  plot(pl, real, xlab="PL", ylab="theta", main="true value", col=cols);abline(0,1)
+  mtext(paste("p =", p, ", N =", N), side=3, line=-2, outer=T)
+  plot(pl, lr, xlab="PL", ylab="LR", main = "logistic regression", col=cols);abline(0,1)
+  tryCatch({
+  plot(pl, ml, xlab="PL", ylab="ML", main="exact likelihood", col=cols);abline(0,1)},
+  error = function(cond){
+    message(cond)
+  }
+  )
+
+
+  tryCatch( {
+    plot(pl, hes, xlab="PL", ylab="hessen", main="hessen", col=cols);abline(0,1)},
+    error=function(cond) {
+      message(cond)
+    }
+  )
+
+}
+
+bias_plots = function(results, pind, nind, poptions, noptions) {
   p = poptions[pind]
   n = noptions[nind]
   
@@ -296,9 +331,70 @@ pl_comparison_plots(results, pind, nind, poptions, noptions) {
   cols = rep('black', length(pl))
   cols[muind] = 'red'
   par(mfrow=c(2,2))
-  plot(pl, real, xlab="PL", ylab="theta", main="true value", col=cols);abline(0,1)
-  plot(pl, ml, xlab="PL", ylab="ML", main="exact likelihood", col=cols);abline(0,1)
-  plot(pl, hes, xlab="PL", ylab="hessen", main="hessen", col=cols);abline(0,1)
-  plot(pl, lr, xlab="PL", ylab="LR", main = "logistic regression", col=cols);abline(0,1)
-  mtext(paste("p =", p, ", N =", N), side=3, line=-2, outer=T)
+  plot(real, pl, xlab="theta", ylab="PL", main="Pseudolikelihood", col=cols);abline(0,1)
+
+  plot(real, pl, xlab="theta", ylab="LR", main="Logistic Regression", col=cols);abline(0,1)
+  mtext(paste("p =",p, ", N =", n), side=3, line=-2, outer=T)
+  tryCatch({
+  plot(real, ml, xlab="theta", ylab="ML", main="Exact likelihood", col=cols);abline(0,1)
+  }, error = function(cond){
+    message("ML does not exist for these values")
+  })
+  tryCatch({
+  plot(real, hes, xlab="theta", ylab="Hessen", main="Hessen", col=cols);abline(0,1)
+  }, error = function(cond) {
+    message("Hessen does not exist for these values")
+  })
+}
+
+print_bias = function(results, p_list, n_list) {
+  for (indp in 1:length(p_list)) {
+    thisp = p_list[indp]
+    true_theta = results$theta[[indp]]
+    mu_ind = re_index(thisp)
+    true_mu = true_theta[mu_ind]
+    true_sig = true_theta[-mu_ind]
+    
+    for (indn in 1:length(n_list)) {
+      pl = results$est_pl[[indp]][[indn]]
+      ml = results$est_ml[[indp]][[indn]]
+      h = results$est_hes[[indp]][[indn]]
+      lr = results$est_lr[[indp]][[indn]]
+      
+      mupl = pl[mu_ind]
+      sigpl = pl[-mu_ind]
+      muml = ml[mu_ind]
+      sigml = ml[-mu_ind]
+      muh = h[mu_ind]
+      sigh = h[-mu_ind]
+      mulr = lr[mu_ind]
+      siglr = lr[-mu_ind]
+      
+      biasmupl = mean((mupl-true_mu)^2)
+      biassigpl = mean((sigpl-true_sig)^2)
+      biasmuml = mean((muml-true_mu)^2)
+      biassigml = mean((sigml-true_sig)^2)
+      biasmuh = mean((muh-true_mu)^2)
+      biassigh = mean((sigh-true_sig)^2)
+      biasmulr = mean((mulr-true_mu)^2)
+      biassiglr = mean((siglr-true_sig)^2)
+      print(paste("N=", n_list[indn], "p=", p_list[indp]))
+      print(paste("the squared bias for PL: ", biasmupl, "sig: ", biassigpl))
+      print(paste("the squared bias for ML: ", biasmuml, "sig: ", biassigml))
+      print(paste("the squared bias for H: ", biasmuh, "sig: ", biassigh))
+      print(paste("the squared bias for LR: ", biasmulr, "sig: ", biassiglr))
+    }
+  }
+  
+}
+from_sig_to_graph = function(theta, p) {
+  
+  sig = matrix(0, p,p)
+  sig[lower.tri(sig, diag=T)] = theta
+  diag(sig) = 0
+  A = ifelse(sig != 0, 1, 0)
+  gr = graph_from_adjacency_matrix(A, mode="undirected")
+  par(mfrow=c(1,1))
+  plot(gr)
+  return(A)
 }
