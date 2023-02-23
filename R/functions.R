@@ -1,5 +1,7 @@
-
+# load packages
+library(boot)
 library(igraph)
+
 random_network = function(p, m) {
   gr = random.graph.game(p, m, type="gnm", loops=F)
   A = as_adjacency_matrix(gr)
@@ -18,9 +20,14 @@ scale_free_network = function(p=10, m=NULL) {
   return(as.matrix(A))
 }
 
-data_generation = function(N=1000,p=10, no.reps=1, A=NULL, Mu, sigma_values) {
+data_generation = function(N=1000,p=10, no.reps=1, A) {
   ##
   set.seed(2)
+  Mu = -abs(rnorm(p, colSums(A)/2, colSums(A)/6))
+  sigma_values = runif(p*(p-1)/2, 0, 1)/2
+  Mu = runif(p, -1, 1)
+  sigma_values = runif(p*(p-1)/2,-1, 1)/2
+  #sigma_values = rep(1, p*(p-1)/2)
   Sigma = matrix(0, p,p)
   Sigma[lower.tri(Sigma)] = sigma_values
   
@@ -46,8 +53,6 @@ data_generation = function(N=1000,p=10, no.reps=1, A=NULL, Mu, sigma_values) {
   }
   return(list(X=X_list, mu=Mu, sigma=Sigma))
 }
-
-
 
 #helper function to get indices of mu
 re_index = function(p=10) {
@@ -315,7 +320,7 @@ multidimensional_update <- function(x, sigma, index, suff_stat, prior_var = Inf)
                                 prior_var = prior_var)
   hessian = inv_hessian$hessian
   inv_hessian = inv_hessian$inv_hessian
-  SE = diag(inv_hessian)
+  SE = diag(solve(-hessian))
   # convert to eta values 
   eta <- vector(length = p * (p + 1) / 2)
   eta[1:p] <- diag(sigma)
@@ -401,9 +406,6 @@ optimize_pseudolikelihood <- function(x, iteration_max = 1e2, prior_var = Inf) {
   
 }
 
-
-#estimators_pl = optimize_pseudolikelihood(X)
-
 pseudolikelihood = function(data) {
   out = tryCatch(
     {
@@ -416,7 +418,7 @@ pseudolikelihood = function(data) {
     se_mu = se[1:p]
     se_sigma = se[-(1:p)]
     ll = estimators$likelihood
-    return(list(sigma_pl = sigma, mu_pl = mu, se_mu = se_mu, se_sigma = se_sigma))
+    return(list(sigma_pl = sigma, mu_pl = mu, var_mu = se_mu, var_sigma = se_sigma))
   },
   error = function(cond) {
     return(NA)
@@ -478,17 +480,15 @@ hessen = function(data, theta_0=matrix(0, p, p)) {
       mu_ml = diag(theta_l)
       diag(theta_l) = 0
       
-      return(list(likelihood=ll, mu_ML = mu_ml, sigma_ML = theta_l, SE_mu = SE_mu, SE_sigma = SE_sigma))
+      return(list(likelihood=ll, mu_ML = mu_ml, sigma_ML = theta_l, var_mu = SE_mu, var_sigma = SE_sigma))
     },
     error = function(cond) {
+      message(cond)
       return(NA)
     }
   )
   
 }
-
-
-
 
 exact_likelihood = function(data, theta_0=matrix(0, p, p)) {
   out = tryCatch({
@@ -543,12 +543,23 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p)) {
     mu_ml = diag(theta_l)
     diag(theta_l) = 0
     
-    return(list(mu_ML = mu_ml, sigma_ML = theta_l, SE_mu = SE_mu, SE_sigma = SE_sigma))
+    return(list(mu_ML = mu_ml, sigma_ML = theta_l, var_mu = SE_mu, var_sigma = SE_sigma))
   },
   error = function(cond) {
     return(NA)
   }
   )
+}
+
+log_reg = function(data, index) {
+  logreg=glm(formula=data[,index]~.,data = data[,-index], family=binomial(link="logit"))
+  return(logreg$coefficients)
+}
+
+bootstrap_lr = function(data, indices) {
+  d = data[indices,]
+  logreg=glm(formula=d[,1]~., data=d[,-1], family=binomial(link="logit"))
+  return(logreg$coefficients)
 }
 
 logistic_regression = function(data) {
@@ -558,20 +569,32 @@ logistic_regression = function(data) {
     N = nrow(data)
     sigma = matrix(0, p, p)
     mu = matrix(0, p, 1)
+    varmu = matrix(0, p, 1)
+    varsig = matrix(0, p, p)
     df = data.frame(data)
     for (i in 1:p) {
-      logreg = glm(formula=df[,i]~., data=df[,-i], family=binomial(link="logit"))
-      params = logreg$coefficients
+      params = log_reg(df, i)
+      thisy = df[,i]
+      thisx = df[,-i]
+      thisdata = data.frame(cbind(thisy, thisx))
+      
+      bootstr = boot(data=thisdata, statistic=bootstrap_lr, R=1e3)
+      vars = diag(var(bootstr$t))
+      
+      varsig[i, -i] = vars[-1]
+      varmu[i] = vars[1]
       sigma[i, -i] = params[-1]
       mu[i] = params[1]
     }
     sigma = symmetrizeMatrix(sigma)
-
-    return(list(mu=mu, sigma=sigma))
+    varsig = symmetrizeMatrix(varsig)
+    theta = sigma
+    diag_sigma = mu
+    theta = theta[lower.tri(theta, diag=T)]
+    return(list(mu=mu, sigma=sigma, theta=theta, var_mu=varmu, var_sigma=varsig))
     },
     error = function(cond){
       return(NA)
     }
   )
-  
 }
