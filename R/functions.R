@@ -1,6 +1,3 @@
-# load packages
-library(boot)
-library(igraph)
 
 random_network = function(p, m) {
   gr = random.graph.game(p, m, type="gnm", loops=F)
