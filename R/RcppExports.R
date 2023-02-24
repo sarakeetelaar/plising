@@ -2,18 +2,14 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 normalizingConstant <- function(theta, Esuf, Ess, Z, y) {
-    .Call(`_pseudolikelihood_normalizingConstant`, theta, Esuf, Ess, Z, y)
+    .Call(`_plising_normalizingConstant`, theta, Esuf, Ess, Z, y)
 }
 
 symmetrizeMatrix <- function(theta) {
-    .Call(`_pseudolikelihood_symmetrizeMatrix`, theta)
+    .Call(`_plising_symmetrizeMatrix`, theta)
 }
 
 hessenNorm <- function(thetaH, EsufH, EssH, ZH, yH) {
-    .Call(`_pseudolikelihood_hessenNorm`, thetaH, EsufH, EssH, ZH, yH)
-}
-
-rcpp_hello_world <- function() {
-    .Call(`_pseudolikelihood_rcpp_hello_world`)
+    .Call(`_plising_hessenNorm`, thetaH, EsufH, EssH, ZH, yH)
 }
 

@@ -12,7 +12,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // normalizingConstant
 double normalizingConstant(NumericVector theta, NumericVector Esuf, NumericMatrix Ess, double Z, NumericVector y);
-RcppExport SEXP _pseudolikelihood_normalizingConstant(SEXP thetaSEXP, SEXP EsufSEXP, SEXP EssSEXP, SEXP ZSEXP, SEXP ySEXP) {
+RcppExport SEXP _plising_normalizingConstant(SEXP thetaSEXP, SEXP EsufSEXP, SEXP EssSEXP, SEXP ZSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -27,7 +27,7 @@ END_RCPP
 }
 // symmetrizeMatrix
 NumericMatrix symmetrizeMatrix(NumericMatrix theta);
-RcppExport SEXP _pseudolikelihood_symmetrizeMatrix(SEXP thetaSEXP) {
+RcppExport SEXP _plising_symmetrizeMatrix(SEXP thetaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -38,7 +38,7 @@ END_RCPP
 }
 // hessenNorm
 double hessenNorm(NumericVector thetaH, NumericVector EsufH, NumericMatrix EssH, double ZH, IntegerMatrix yH);
-RcppExport SEXP _pseudolikelihood_hessenNorm(SEXP thetaHSEXP, SEXP EsufHSEXP, SEXP EssHSEXP, SEXP ZHSEXP, SEXP yHSEXP) {
+RcppExport SEXP _plising_hessenNorm(SEXP thetaHSEXP, SEXP EsufHSEXP, SEXP EssHSEXP, SEXP ZHSEXP, SEXP yHSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -51,26 +51,15 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// rcpp_hello_world
-List rcpp_hello_world();
-RcppExport SEXP _pseudolikelihood_rcpp_hello_world() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpp_hello_world());
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_pseudolikelihood_normalizingConstant", (DL_FUNC) &_pseudolikelihood_normalizingConstant, 5},
-    {"_pseudolikelihood_symmetrizeMatrix", (DL_FUNC) &_pseudolikelihood_symmetrizeMatrix, 1},
-    {"_pseudolikelihood_hessenNorm", (DL_FUNC) &_pseudolikelihood_hessenNorm, 5},
-    {"_pseudolikelihood_rcpp_hello_world", (DL_FUNC) &_pseudolikelihood_rcpp_hello_world, 0},
+    {"_plising_normalizingConstant", (DL_FUNC) &_plising_normalizingConstant, 5},
+    {"_plising_symmetrizeMatrix", (DL_FUNC) &_plising_symmetrizeMatrix, 1},
+    {"_plising_hessenNorm", (DL_FUNC) &_plising_hessenNorm, 5},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_pseudolikelihood(DllInfo *dll) {
+RcppExport void R_init_plising(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
