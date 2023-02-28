@@ -24,7 +24,6 @@ nexpit <- function(phi) {
 
 # indexing function used to convert the pxp
 # parameter matrix sigma to a {p * (p + 1) / 2} vector
-
 indexing <- function(p) {
   index <- matrix(0, nrow = p * (p - 1) / 2, ncol = 3)
   counter <- 0

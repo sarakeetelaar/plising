@@ -1,28 +1,29 @@
-
-
 pseudolikelihood = function(data) {
-  out = tryCatch(
-    {
-    estimators = optimize_pseudolikelihood(data)
-    sigma = estimators$sigma
-    mu = estimators$mu
+  out = tryCatch({
     
+    estimators = optimize_pseudolikelihood(data)
     se = estimators$se
     p = length(mu)
     se_mu = se[1:p]
     se_sigma = se[-(1:p)]
-    ll = estimators$likelihood
-    return(list(sigma_pl = sigma, mu_pl = mu, var_mu = se_mu, var_sigma = se_sigma))
+    
+    mu = list(est=estimators$mu, var=se_mu)
+    sigma = list(est=estimators$sigma, var=se_sigma)
+    
+    return(list(mu=mu, sigma=sigma))
   },
   error = function(cond) {
+    message("pseudolikelihood failed")
+    message(cond)
     return(NA)
-  }
-  )
+  })
 }
 
-hessen = function(data, theta_0=matrix(0, p, p)) {
+reduced_population = function(data, theta_0=matrix(0, p, p)) {
   out = tryCatch( 
     {
+      mu = list()
+      sigma = list()
       N = nrow(data)
       O = t(data) %*% data * 2
       diag(O) = diag(O)/2
@@ -55,7 +56,7 @@ hessen = function(data, theta_0=matrix(0, p, p)) {
           break
         }
       }
-      #SE = sqrt(diag(solve(-H)))
+
       SE = diag(solve(-H))
       indices = re_index(p)
       
@@ -74,9 +75,15 @@ hessen = function(data, theta_0=matrix(0, p, p)) {
       mu_ml = diag(theta_l)
       diag(theta_l) = 0
       
-      return(list(likelihood=ll, mu_ML = mu_ml, sigma_ML = theta_l, var_mu = SE_mu, var_sigma = SE_sigma))
+      mu$est = mu_ml
+      sigma$est = theta_l
+      
+      mu$var = SE_mu
+      sigma$var = SE_sigma
+      return(list(mu=mu, sigma=sigma))
     },
     error = function(cond) {
+      message("observed population method failed")
       message(cond)
       return(NA)
     }
@@ -84,8 +91,13 @@ hessen = function(data, theta_0=matrix(0, p, p)) {
   
 }
 
-exact_likelihood = function(data, theta_0=matrix(0, p, p)) {
+exact_likelihood = function(data, theta_0=matrix(0, p, p), max.nodes=20) {
   out = tryCatch({
+    if (ncol(data) > max.nodes) {
+      message("max number of variables for this method exceeded")
+      return(NULL)
+    }
+    mu = sigma = list()
     N = nrow(data)
     O = t(data) %*% data * 2
     diag(O) = diag(O)/2
@@ -117,8 +129,7 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p)) {
         break
       }
     }
-    #SE = sqrt(diag(solve(-H)))
-    ll_value = ll
+
     SE = diag(solve(-H))
     indices = re_index(p)
     
@@ -137,23 +148,27 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p)) {
     mu_ml = diag(theta_l)
     diag(theta_l) = 0
     
-    return(list(mu_ML = mu_ml, sigma_ML = theta_l, var_mu = SE_mu, var_sigma = SE_sigma))
+    mu$est = mu_ml
+    mu$var = SE_mu
+    sigma$est = theta_l
+    sigma$var = SE_sigma
+    
+    return(list(mu, sigma))
   },
   error = function(cond) {
+    message("exact likelihood failed")
+    message(cond)
     return(NA)
   }
   )
 }
 
-
-
 logistic_regression = function(data) {
-  out = tryCatch(
-    {
+  out = tryCatch({
     p = ncol(data)
     N = nrow(data)
-    sigma = matrix(0, p, p)
-    mu = matrix(0, p, 1)
+    sig = matrix(0, p, p)
+    m = matrix(0, p, 1)
     varmu = matrix(0, p, 1)
     varsig = matrix(0, p, p)
     df = data.frame(data)
@@ -168,31 +183,41 @@ logistic_regression = function(data) {
       
       varsig[i, -i] = vars[-1]
       varmu[i] = vars[1]
-      sigma[i, -i] = params[-1]
-      mu[i] = params[1]
+      sig[i, -i] = params[-1]
+      m[i] = params[1]
     }
-    sigma = symmetrizeMatrix(sigma)
+    
+    sig = symmetrizeMatrix(sig)
     varsig = symmetrizeMatrix(varsig)
-    theta = sigma
-    diag_sigma = mu
-    theta = theta[lower.tri(theta, diag=T)]
-    return(list(mu=mu, sigma=sigma, theta=theta, var_mu=varmu, var_sigma=varsig))
+    
+    mu = list(est = m, var = varmu)
+    sigma = list(est=sig, var = varsig)
+    
+    return(list(mu=mu, sigma=sigma))
     },
     error = function(cond){
+      message("logistic regression failed")
+      message(cond)
       return(NA)
     }
   )
 }
 
-estimate_ising = function(data, method) {
-  if (method == "pl") 
+estimate_ising = function(data, method, start_val=NULL) {
+  if (method == "pseudo") 
     return(pseudolikelihood(data))
-  else if (method == "ml")
-    return(exact_likelihood(data))
-  else if (method == "lr")
+  else if (method == "exact") {
+    if (is.null(start_val))
+      return(exact_likelihood(data))
+    return(exact_likelihood(data, theta_0=start_val))
+  }
+  else if (method == "independent")
     return (logistic_regression(data))
-  else if (method =="h")
-    return (hessen(data))
+  else if (method == "reduced") {
+    if (is.null(start_val))
+      return (reduced_population(data))
+    return(reduced_population(data, theta_0=start_val))
+  }
   else
-    message("This method is not (yet) included in the package")
+    message("This method is not included in the package")
 } 
