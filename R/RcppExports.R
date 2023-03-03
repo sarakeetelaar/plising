@@ -13,3 +13,11 @@ hessenNorm <- function(thetaH, EsufH, EssH, ZH, yH) {
     .Call(`_plising_hessenNorm`, thetaH, EsufH, EssH, ZH, yH)
 }
 
+sumSigma <- function(sigma, x, index, v) {
+    .Call(`_plising_sumSigma`, sigma, x, index, v)
+}
+
+derivativeHelp <- function(x, mu, sigma) {
+    .Call(`_plising_derivativeHelp`, x, mu, sigma)
+}
+

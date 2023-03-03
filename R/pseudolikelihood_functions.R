@@ -83,7 +83,7 @@ invert_hessian = function(x, sigma, index, prior_var = Inf) {
   # compute int_hessian
   main_hessian = matrix(0, nrow = p, ncol = p)
   for (s in 1:p) {
-    main_hessian[s,s] = -sum(pq[, s]*(1-pq[,s])) - 1
+    main_hessian[s,s] = -sum(pq[, s]*(1-pq[, s])) - 1
   }
   
   int_hessian = matrix(0, nrow = p * (p - 1) / 2, ncol = p * (p-1) / 2)
@@ -156,7 +156,7 @@ invert_hessian = function(x, sigma, index, prior_var = Inf) {
   index_main = 1:p
   index_int = (1:(p * (p + 1) / 2))[-index_main]
   
-  hes = matrix(nrow=p*(p+1)/2, ncol=p*(p+1)/2)
+  hes = matrix(nrow = p * (p + 1) / 2, ncol = p * (p + 1) / 2)
   hes[index_main, index_main] = main_hessian
   hes[index_main, index_int] = cross_hessian
   hes[index_int, index_main] = t(cross_hessian)
@@ -215,7 +215,12 @@ multidimensional_update = function(x, sigma, index, suff_stat, prior_var = Inf) 
                                 prior_var = prior_var)
   hessian = inv_hessian$hessian
   inv_hessian = inv_hessian$inv_hessian
-  SE = diag(solve(-hessian))
+  sig = sigma
+  diag(sig) = 0
+  mu = diag(sigma)
+  derivs = derivativeHelp(x, mu, sig)
+  sandwich = (solve(-hessian) %*% derivs %*% solve(-inv_hessian)) / n
+  SE = diag(sandwich)
   # convert to eta values 
   eta = vector(length = p * (p + 1) / 2)
   eta[1:p] = diag(sigma)
@@ -300,3 +305,4 @@ optimize_pseudolikelihood = function(x, iteration_max = 1e2, prior_var = Inf) {
     })
   
 }
+

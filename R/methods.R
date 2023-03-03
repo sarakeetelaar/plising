@@ -153,7 +153,7 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p), max.nodes=20) {
     sigma$est = theta_l
     sigma$var = SE_sigma
     
-    return(list(mu, sigma))
+    return(list(mu=mu, sigma=sigma))
   },
   error = function(cond) {
     message("exact likelihood failed")
@@ -206,17 +206,19 @@ logistic_regression = function(data) {
 estimate_ising = function(data, method, start_val=NULL) {
   if (method == "pseudo") 
     return(pseudolikelihood(data))
-  else if (method == "exact") {
-    if (is.null(start_val))
+  else if (method == "exact"){
+    if (is.null(start_val)) 
       return(exact_likelihood(data))
-    return(exact_likelihood(data, theta_0=start_val))
+    else 
+      return(exact_likelihood(data, start_val))
   }
   else if (method == "independent")
     return (logistic_regression(data))
   else if (method == "reduced") {
     if (is.null(start_val))
       return (reduced_population(data))
-    return(reduced_population(data, theta_0=start_val))
+    else
+      return(reduced_population(data, theta_0=start_val))
   }
   else
     message("This method is not included in the package")

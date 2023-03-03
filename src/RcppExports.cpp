@@ -51,11 +51,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sumSigma
+double sumSigma(NumericMatrix sigma, NumericMatrix x, int index, int v);
+RcppExport SEXP _plising_sumSigma(SEXP sigmaSEXP, SEXP xSEXP, SEXP indexSEXP, SEXP vSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type index(indexSEXP);
+    Rcpp::traits::input_parameter< int >::type v(vSEXP);
+    rcpp_result_gen = Rcpp::wrap(sumSigma(sigma, x, index, v));
+    return rcpp_result_gen;
+END_RCPP
+}
+// derivativeHelp
+NumericMatrix derivativeHelp(NumericMatrix x, NumericVector mu, NumericMatrix sigma);
+RcppExport SEXP _plising_derivativeHelp(SEXP xSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(derivativeHelp(x, mu, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_plising_normalizingConstant", (DL_FUNC) &_plising_normalizingConstant, 5},
     {"_plising_symmetrizeMatrix", (DL_FUNC) &_plising_symmetrizeMatrix, 1},
     {"_plising_hessenNorm", (DL_FUNC) &_plising_hessenNorm, 5},
+    {"_plising_sumSigma", (DL_FUNC) &_plising_sumSigma, 4},
+    {"_plising_derivativeHelp", (DL_FUNC) &_plising_derivativeHelp, 3},
     {NULL, NULL, 0}
 };
 
