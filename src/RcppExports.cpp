@@ -10,6 +10,60 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// expprob
+double expprob(NumericMatrix x, NumericMatrix sigma, NumericVector mu, int v_ind, int q_ind);
+RcppExport SEXP _plising_expprob(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP v_indSEXP, SEXP q_indSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< int >::type v_ind(v_indSEXP);
+    Rcpp::traits::input_parameter< int >::type q_ind(q_indSEXP);
+    rcpp_result_gen = Rcpp::wrap(expprob(x, sigma, mu, v_ind, q_ind));
+    return rcpp_result_gen;
+END_RCPP
+}
+// muHessian
+NumericMatrix muHessian(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
+RcppExport SEXP _plising_muHessian(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(muHessian(x, sigma, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sigmaHessian
+NumericVector sigmaHessian(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
+RcppExport SEXP _plising_sigmaHessian(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(sigmaHessian(x, sigma, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// crossHessian
+NumericMatrix crossHessian(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
+RcppExport SEXP _plising_crossHessian(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(crossHessian(x, sigma, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // normalizingConstant
 double normalizingConstant(NumericVector theta, NumericVector Esuf, NumericMatrix Ess, double Z, NumericVector y);
 RcppExport SEXP _plising_normalizingConstant(SEXP thetaSEXP, SEXP EsufSEXP, SEXP EssSEXP, SEXP ZSEXP, SEXP ySEXP) {
@@ -80,6 +134,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_plising_expprob", (DL_FUNC) &_plising_expprob, 5},
+    {"_plising_muHessian", (DL_FUNC) &_plising_muHessian, 3},
+    {"_plising_sigmaHessian", (DL_FUNC) &_plising_sigmaHessian, 3},
+    {"_plising_crossHessian", (DL_FUNC) &_plising_crossHessian, 3},
     {"_plising_normalizingConstant", (DL_FUNC) &_plising_normalizingConstant, 5},
     {"_plising_symmetrizeMatrix", (DL_FUNC) &_plising_symmetrizeMatrix, 1},
     {"_plising_hessenNorm", (DL_FUNC) &_plising_hessenNorm, 5},

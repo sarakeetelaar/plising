@@ -219,7 +219,7 @@ multidimensional_update = function(x, sigma, index, suff_stat, prior_var = Inf) 
   diag(sig) = 0
   mu = diag(sigma)
   derivs = derivativeHelp(x, mu, sig)
-  sandwich = (solve(-hessian) %*% derivs %*% solve(-inv_hessian)) / n
+  sandwich = (solve(-hessian) %*% derivs %*% solve(-hessian)) / n
   SE = diag(sandwich)
   # convert to eta values 
   eta = vector(length = p * (p + 1) / 2)

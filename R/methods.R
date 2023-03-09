@@ -3,7 +3,7 @@ pseudolikelihood = function(data) {
     
     estimators = optimize_pseudolikelihood(data)
     se = estimators$se
-    p = length(mu)
+    p = ncol(data)
     se_mu = se[1:p]
     se_sigma = se[-(1:p)]
     
@@ -179,8 +179,8 @@ logistic_regression = function(data) {
       thisdata = data.frame(cbind(thisy, thisx))
       
       bootstr = boot::boot(data=thisdata, statistic=bootstrap_lr, R=1e3)
-      vars = diag(var(bootstr$t))
-      
+      vars = diag(cov(bootstr$t))
+      print(vars)
       varsig[i, -i] = vars[-1]
       varmu[i] = vars[1]
       sig[i, -i] = params[-1]
