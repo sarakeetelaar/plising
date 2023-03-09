@@ -183,21 +183,23 @@ NumericVector singleGradientPL(NumericMatrix x,
   NumericVector grad( nparam );
   for (int ind = 0; ind < p; ind ++) {
     double pi = expprob(x, sigma, mu, obs, ind);
-    grad[ind] = x[obd, ind] - pi; 
+    grad[ind] = x(obs, ind) - pi; 
   }
-  int index = ind + 1;
+  int index = p;
   for (int ind1 = 0; ind1 < (p - 1); ind1 ++) {
-    for (int ind2 = 0; ind2 < p; ind2 ++) {
+    for (int ind2 = (ind1 + 1); ind2 < p; ind2 ++) {
       double pi = expprob(x, sigma, mu, obs, ind1);
       double pj = expprob(x, sigma, mu, obs, ind2);
-      
+      std::cout << ind1 << " " << ind2 << "\n";
       grad[index] = 2 * x(obs, ind1) * x(obs, ind2) - x(obs, ind2) * pi - x(obs, ind1) * pj;
+      std::cout << grad[index] << "\n";
+      index++;
     }
   }
   return grad;
 }
 
-// [[Rcpp:export]]
+// [[Rcpp::export]]
 NumericMatrix outerGradient(NumericMatrix x,
                             NumericMatrix sigma,
                             NumericVector mu) {

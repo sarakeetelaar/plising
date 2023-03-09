@@ -64,6 +64,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// singleGradientPL
+NumericVector singleGradientPL(NumericMatrix x, NumericMatrix sigma, NumericVector mu, int obs);
+RcppExport SEXP _plising_singleGradientPL(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP obsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< int >::type obs(obsSEXP);
+    rcpp_result_gen = Rcpp::wrap(singleGradientPL(x, sigma, mu, obs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// outerGradient
+NumericMatrix outerGradient(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
+RcppExport SEXP _plising_outerGradient(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(outerGradient(x, sigma, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // normalizingConstant
 double normalizingConstant(NumericVector theta, NumericVector Esuf, NumericMatrix Ess, double Z, NumericVector y);
 RcppExport SEXP _plising_normalizingConstant(SEXP thetaSEXP, SEXP EsufSEXP, SEXP EssSEXP, SEXP ZSEXP, SEXP ySEXP) {
@@ -138,6 +165,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_plising_muHessian", (DL_FUNC) &_plising_muHessian, 3},
     {"_plising_sigmaHessian", (DL_FUNC) &_plising_sigmaHessian, 3},
     {"_plising_crossHessian", (DL_FUNC) &_plising_crossHessian, 3},
+    {"_plising_singleGradientPL", (DL_FUNC) &_plising_singleGradientPL, 4},
+    {"_plising_outerGradient", (DL_FUNC) &_plising_outerGradient, 3},
     {"_plising_normalizingConstant", (DL_FUNC) &_plising_normalizingConstant, 5},
     {"_plising_symmetrizeMatrix", (DL_FUNC) &_plising_symmetrizeMatrix, 1},
     {"_plising_hessenNorm", (DL_FUNC) &_plising_hessenNorm, 5},

@@ -17,6 +17,14 @@ crossHessian <- function(x, sigma, mu) {
     .Call(`_plising_crossHessian`, x, sigma, mu)
 }
 
+singleGradientPL <- function(x, sigma, mu, obs) {
+    .Call(`_plising_singleGradientPL`, x, sigma, mu, obs)
+}
+
+outerGradient <- function(x, sigma, mu) {
+    .Call(`_plising_outerGradient`, x, sigma, mu)
+}
+
 normalizingConstant <- function(theta, Esuf, Ess, Z, y) {
     .Call(`_plising_normalizingConstant`, theta, Esuf, Ess, Z, y)
 }
