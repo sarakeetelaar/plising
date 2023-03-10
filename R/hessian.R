@@ -15,7 +15,26 @@ hessian_pl = function(x, sigma, mu) {
   
   inv_hes = solve(hess)
   
-  return(list(hessian=hess, inverse_hessian=inv_hes))
+  return(list(hessian=hess, inverse=inv_hes))
   
+  
+}
+
+variance_pl = function(x, sigma, mu) {
+  p = length(mu)
+  hessian = hessian_pl(x, sigma, mu)
+  inv_hessian  = hessian$inverse
+  
+  outergrad = outerGradient(x, sigma, mu)
+  print(outergrad)
+  print(inv_hessian)
+  inv2 = solve(-hessian$hessian)
+  vars = (inv2 %*% outergrad) %*% inv2
+  
+  variances = diag(vars)
+  var_mu = variances[1:p]
+  var_sig = variances[-(1:p)]
+  
+  return(list(mu=var_mu, sigma=var_sig))
   
 }

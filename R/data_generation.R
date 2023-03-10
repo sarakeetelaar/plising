@@ -9,30 +9,21 @@ data_generation = function(N=1000, graph, mu, sigma=1) {
   return(X)
 }
 
-estimate_parameters = function(data, N, p) {
-  options = 6:41
-  rownumbers = sample(1:26715, N, replace=F)
-  colnumbers = sample(6:41, p, replace=F)
-  sub_data = data[rownumbers, colnumbers]
-  df = apply(sub_data, 2, strtoi)
-  print(df)
-  estimate = estimate_ising(df, "pseudo")
-  sigma = estimate$sigma$est
-  mu = estimate$mu$est
-  return(list(sigma=sigma, mu=mu))
-}
-
-process_data = function(data, N, p) {
+estimate_full_parameters = function(data) {
   data = data.matrix(data)
-  rows = sample(1:nrow(data), N)
-  cols = sample(1:ncol(data), p)
-  subset = data[rows, cols]
+  est = IsingSampler::EstimateIsing(data, responses=c(0L, 1L), method="pl")
   
-  df = apply(subset, 2, dichotomize)
+  return(est)
 }
 
-dichotomize = function(el) {
-  if (el < 2)
-    return(0)
-  return(1)
+
+subset_parameters = function(est, p) {
+  full_sigma =  est$graph
+  full_mu = est$thresholds
+  
+  selected_vars = sample(1:length(full_mu), p)
+  sigma = full_sigma[selected_vars, selected_vars]
+  mu = full_mu[selected_vars]
+  
+  return(list(mu=mu, sigma=sigma/2))
 }

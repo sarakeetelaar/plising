@@ -190,9 +190,7 @@ NumericVector singleGradientPL(NumericMatrix x,
     for (int ind2 = (ind1 + 1); ind2 < p; ind2 ++) {
       double pi = expprob(x, sigma, mu, obs, ind1);
       double pj = expprob(x, sigma, mu, obs, ind2);
-      std::cout << ind1 << " " << ind2 << "\n";
       grad[index] = 2 * x(obs, ind1) * x(obs, ind2) - x(obs, ind2) * pi - x(obs, ind1) * pj;
-      std::cout << grad[index] << "\n";
       index++;
     }
   }
@@ -219,4 +217,5 @@ NumericMatrix outerGradient(NumericMatrix x,
   }
   return outergrad/N;
 }
+
 
