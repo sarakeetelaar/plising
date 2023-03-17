@@ -114,14 +114,15 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p), max.nodes=20) {
       
       Z = 0.0
       y = matrix(0, nrow = p, ncol = 1)
+   
       Z = normalizingConstant(theta, E_suf, E_ss, Z, y)
-      
       E_suf = E_suf/Z
       E_ss = E_ss/Z
       
       H = -N * (E_ss - E_suf %*% t(E_suf))
+
       grad = O - N*E_suf
-      
+
       theta = theta - solve(H)%*%grad
       ll = t(O) %*% theta - N * log(Z)
       D = sum(abs(theta-theta_old))
@@ -180,7 +181,6 @@ logistic_regression = function(data) {
       
       bootstr = boot::boot(data=thisdata, statistic=bootstrap_lr, R=1e3)
       vars = diag(cov(bootstr$t))
-      print(vars)
       varsig[i, -i] = vars[-1]
       varmu[i] = vars[1]
       sig[i, -i] = params[-1]

@@ -57,12 +57,183 @@ onedimensional_update = function(x, sigma, suff_stat, prior_var = Inf) {
   return(sigma)
   
 }
+# 6 -----------------------------------------------------------------------------
 
+# Multidimensional Newton Raphson algorithm pseudolikelihood updates used within the main
+# optimization function to optimize the pseudologlikelihood parameters
+multidimensional_update2 = function(x, sigma, index, suff_stat, prior_var = Inf) {
+  n = nrow(x)
+  p = ncol(x)
+  
+  # compute vector of first-order derivatives (main effects) 
+  prob = matrix(0, nrow = n, ncol = p)
+  derivatives = vector(length = p * (p + 1) / 2)
+  for(s in 1:p) {
+    phi = sigma[s, s] + x[, -s] %*% sigma[-s, s]
+    prob[, s] = expit(phi)
+    derivatives[s] = suff_stat[s, s] - sum(prob[, s])
+    derivatives[s] = derivatives[s] - sigma[s, s] / prior_var
+  }
+  
+  # compute vector of first-order derivatives (interaction effects) 
+  for(s in 1:(p - 1)) {
+    for(t in (s + 1): p) {
+      row = p + index[index[, 2] == s & index[, 3] == t, 1]
+      derivatives[row] = 2 * suff_stat[s, t] - x[, t] %*% prob[, s]
+      derivatives[row] = derivatives[row] - x[, s] %*% prob[, t]
+      derivatives[row] = derivatives[row] - sigma[s, t] / prior_var
+    }
+  }
+  
+  sig = sigma
+  diag(sig) = 0
+  mu = diag(sigma)
+  hessian = hessian_pl(x, sig, mu)
+  inv_hessian = hessian$inverse
+  hessian = hessian$hessian
+  # 
+  # derivs = derivativeHelp(x, mu, sig)
+  # sandwich = (solve(-hessian) %*% derivs %*% solve(-hessian)) / n
+  sandwich_grad = outerGradient(x, mu, sig)
+  var_pl = inv_hessian %*% sandwich_grad %*% inv_hessian
+  vars = diag(var_pl)
+  # convert to eta values 
+  eta = vector(length = p * (p + 1) / 2)
+  eta[1:p] = diag(sigma)
+  for(s in 1:(p - 1)) {
+    for(t in (s + 1):p) {
+      row = index[index[,2] == s & index[, 3] == t, 1] + p
+      eta[row] = sigma[s, t]
+    }
+  }
+  
+  # Newton - Raphson update 
+  eta = eta - inv_hessian %*% derivatives
+  
+  # revert to sigma values 
+  diag(sigma) = eta[1:p]
+  for(s in 1:(p - 1)) {
+    for(t in (s + 1):p) {
+      row = p + index[index[,2] == s & index[, 3] == t, 1]
+      sigma[s, t] = eta[row]
+      sigma[t, s] = eta[row]
+    }
+  }
+  return(list(sigma=sigma, SE=vars))
+}
 
-# 5 ----------------------------------------------------------------------------
+optimize_pseudolikelihood = function(x, iteration_max = 1e2, prior_var = Inf) {
+  p = ncol(x)
+  n = nrow(x)
+  # parameter matrix and sufficient statistics 
+  sigma = matrix(0, nrow = p, ncol = p)
+  suff_stat = t(x) %*% x
+  
+  # compute starting values 
+  for(iteration in 1:5) {
+    sigma = onedimensional_update(sigma = sigma,
+                                   x = x,
+                                   suff_stat = suff_stat,
+                                   prior_var = prior_var)
+  }
+  
+  log_pseudolikelihood = log_pseudolikelihood(sigma = sigma,
+                                               x = x)
+  # index allows us to convert sigma (matrix) to eta (vector) and revert back -
+  index = indexing (p)
+  
+  log_pseudolikelihood_storage = c()
+  
+  for(iteration in 1:iteration_max) {
+    # update pseudolikelihood parameters 
+    updated = multidimensional_update(sigma = sigma,
+                                       index = index,
+                                       x = x,
+                                       suff_stat = suff_stat,
+                                       prior_var = prior_var)
+    sigma = updated$sigma
+    # update log of pseudolikelihood
+    log_pseudolikelihood_old = log_pseudolikelihood
+    log_pseudolikelihood = log_pseudolikelihood(sigma = sigma,
+                                                 x = x)
 
-# computes the inverse Hessian of the log
-# pseudolikelihood distribution which is used by function 6
+    log_pseudolikelihood_storage[iteration] = log_pseudolikelihood #store the pseudolik values for later
+    
+    difference = abs(log_pseudolikelihood - log_pseudolikelihood_old)
+    if(difference < sqrt(.Machine$double.eps)) break
+    
+    if(iteration == iteration_max)
+      warning(paste("The optimization procedure did not convergence in", iteration_max, "iterations.",
+                    sep = " "), call. = FALSE)
+  }
+  se = updated$SE
+  mu = diag(sigma)
+  diag(sigma) = 0
+  sigma = sigma/2
+  return(list(se=se, mu = mu, sigma = sigma))
+}
+
+multidimensional_update = function(x, sigma, index, suff_stat, prior_var = Inf) {
+  n = nrow(x)
+  p = ncol(x)
+  
+  # compute vector of first-order derivatives (main effects) 
+  prob = matrix(0, nrow = n, ncol = p)
+  derivatives = vector(length = p * (p + 1) / 2)
+  for(s in 1:p) {
+    phi = sigma[s, s] + x[, -s] %*% sigma[-s, s]
+    prob[, s] = expit(phi)
+    derivatives[s] = suff_stat[s, s] - sum(prob[, s])
+    derivatives[s] = derivatives[s] - sigma[s, s] / prior_var
+  }
+  
+  # compute vector of first-order derivatives (interaction effects) 
+  for(s in 1:(p - 1)) {
+    for(t in (s + 1): p) {
+      row = p + index[index[, 2] == s & index[, 3] == t, 1]
+      derivatives[row] = 2 * suff_stat[s, t] - x[, t] %*% prob[, s]
+      derivatives[row] = derivatives[row] - x[, s] %*% prob[, t]
+      derivatives[row] = derivatives[row] - sigma[s, t] / prior_var
+    }
+  }
+  
+  # compute the inverse Hessian
+  inv_hessian = invert_hessian(sigma = sigma,
+                               index = index,
+                               x = x,
+                               prior_var = prior_var)
+  hessian = inv_hessian$hessian
+  inv_hessian = inv_hessian$inv_hessian
+  sig = sigma
+  diag(sig) = 0
+  mu = diag(sigma)
+  derivs = derivativeHelp(x, mu, sig)
+  sandwich = (solve(-hessian) %*% derivs %*% solve(-hessian)) / n
+  SE = diag(sandwich)
+  # convert to eta values 
+  eta = vector(length = p * (p + 1) / 2)
+  eta[1:p] = diag(sigma)
+  for(s in 1:(p - 1)) {
+    for(t in (s + 1):p) {
+      row = index[index[,2] == s & index[, 3] == t, 1] + p
+      eta[row] = sigma[s, t]
+    }
+  }
+  
+  # Newton - Raphson update 
+  eta = eta - inv_hessian %*% derivatives
+  
+  # revert to sigma values 
+  diag(sigma) = eta[1:p]
+  for(s in 1:(p - 1)) {
+    for(t in (s + 1):p) {
+      row = p + index[index[,2] == s & index[, 3] == t, 1]
+      sigma[s, t] = eta[row]
+      sigma[t, s] = eta[row]
+    }
+  }
+  return(list(sigma=sigma, SE=SE))
+}
 
 invert_hessian = function(x, sigma, index, prior_var = Inf) {
   # the Hessian matrix is build up as
@@ -149,8 +320,8 @@ invert_hessian = function(x, sigma, index, prior_var = Inf) {
   
   # compute inv_hessian 
   inv_hessian = matrix(data = 0,
-                        nrow = p * (p + 1) / 2,
-                        ncol = p * (p + 1) / 2)
+                       nrow = p * (p + 1) / 2,
+                       ncol = p * (p + 1) / 2)
   
   # indices for main effects and interactions
   index_main = 1:p
@@ -180,129 +351,4 @@ invert_hessian = function(x, sigma, index, prior_var = Inf) {
   return(list(inv_hessian=inv_hessian, hessian=hes))
 }
 
-# 6 -----------------------------------------------------------------------------
-
-# Multidimensional Newton Raphson algorithm pseudolikelihood updates used within the main
-# optimization function to optimize the pseudologlikelihood parameters
-multidimensional_update = function(x, sigma, index, suff_stat, prior_var = Inf) {
-  n = nrow(x)
-  p = ncol(x)
-  
-  # compute vector of first-order derivatives (main effects) 
-  prob = matrix(0, nrow = n, ncol = p)
-  derivatives = vector(length = p * (p + 1) / 2)
-  for(s in 1:p) {
-    phi = sigma[s, s] + x[, -s] %*% sigma[-s, s]
-    prob[, s] = expit(phi)
-    derivatives[s] = suff_stat[s, s] - sum(prob[, s])
-    derivatives[s] = derivatives[s] - sigma[s, s] / prior_var
-  }
-  
-  # compute vector of first-order derivatives (interaction effects) 
-  for(s in 1:(p - 1)) {
-    for(t in (s + 1): p) {
-      row = p + index[index[, 2] == s & index[, 3] == t, 1]
-      derivatives[row] = 2 * suff_stat[s, t] - x[, t] %*% prob[, s]
-      derivatives[row] = derivatives[row] - x[, s] %*% prob[, t]
-      derivatives[row] = derivatives[row] - sigma[s, t] / prior_var
-    }
-  }
-  
-  # compute the inverse Hessian
-  inv_hessian = invert_hessian(sigma = sigma,
-                                index = index,
-                                x = x,
-                                prior_var = prior_var)
-  hessian = inv_hessian$hessian
-  inv_hessian = inv_hessian$inv_hessian
-  sig = sigma
-  diag(sig) = 0
-  mu = diag(sigma)
-  derivs = derivativeHelp(x, mu, sig)
-  sandwich = (solve(-hessian) %*% derivs %*% solve(-hessian)) / n
-  SE = diag(sandwich)
-  # convert to eta values 
-  eta = vector(length = p * (p + 1) / 2)
-  eta[1:p] = diag(sigma)
-  for(s in 1:(p - 1)) {
-    for(t in (s + 1):p) {
-      row = index[index[,2] == s & index[, 3] == t, 1] + p
-      eta[row] = sigma[s, t]
-    }
-  }
-  
-  # Newton - Raphson update 
-  eta = eta - inv_hessian %*% derivatives
-  
-  # revert to sigma values 
-  diag(sigma) = eta[1:p]
-  for(s in 1:(p - 1)) {
-    for(t in (s + 1):p) {
-      row = p + index[index[,2] == s & index[, 3] == t, 1]
-      sigma[s, t] = eta[row]
-      sigma[t, s] = eta[row]
-    }
-  }
-  return(list(sigma=sigma, SE=SE))
-}
-
-optimize_pseudolikelihood = function(x, iteration_max = 1e2, prior_var = Inf) {
-  out = tryCatch(
-    {
-      p = ncol(x)
-      n = nrow(x)
-      # parameter matrix and sufficient statistics 
-      sigma = matrix(0, nrow = p, ncol = p)
-      suff_stat = t(x) %*% x
-      
-      # compute starting values 
-      for(iteration in 1:5) {
-        sigma = onedimensional_update(sigma = sigma,
-                                       x = x,
-                                       suff_stat = suff_stat,
-                                       prior_var = prior_var)
-      }
-      
-      log_pseudolikelihood = log_pseudolikelihood(sigma = sigma,
-                                                   x = x)
-      
-      # index allows us to convert sigma (matrix) to eta (vector) and revert back -
-      index = indexing (p)
-      
-      log_pseudolikelihood_storage = c()
-      
-      for(iteration in 1:iteration_max) {
-        # update pseudolikelihood parameters 
-        updated = multidimensional_update(sigma = sigma,
-                                           index = index,
-                                           x = x,
-                                           suff_stat = suff_stat,
-                                           prior_var = prior_var)
-        sigma = updated$sigma
-        
-        # update log of pseudolikelihood
-        log_pseudolikelihood_old = log_pseudolikelihood
-        log_pseudolikelihood = log_pseudolikelihood(sigma = sigma,
-                                                     x = x)
-        log_pseudolikelihood_storage[iteration] = log_pseudolikelihood #store the pseudolik values for later
-        
-        difference = abs(log_pseudolikelihood - log_pseudolikelihood_old)
-        if(difference < sqrt(.Machine$double.eps)) break
-        
-        if(iteration == iteration_max)
-          warning(paste("The optimization procedure did not convergence in", iteration_max, "iterations.",
-                        sep = " "), call. = FALSE)
-      }
-      se = updated$SE
-      mu = diag(sigma)
-      diag(sigma) = 0
-      sigma = sigma/2
-      return(list(se=se, mu = mu, sigma = sigma))
-    },
-    error = function(cond) {
-      message(cond)
-      return(NA)
-    })
-  
-}
 

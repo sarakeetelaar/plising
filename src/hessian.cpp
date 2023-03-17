@@ -215,7 +215,7 @@ NumericMatrix outerGradient(NumericMatrix x,
     }
     outergrad += outer;
   }
-  return outergrad/N;
+  return outergrad;
 }
 
 

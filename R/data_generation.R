@@ -9,21 +9,47 @@ data_generation = function(N=1000, graph, mu, sigma=1) {
   return(X)
 }
 
-estimate_full_parameters = function(data) {
-  data = data.matrix(data)
-  est = IsingSampler::EstimateIsing(data, responses=c(0L, 1L), method="pl")
+data_preparation = function(data=Wenchuan) {
+  df = na.omit(data)
+  df = ifelse(df < 3, 0, 1)
   
-  return(est)
+  return(df)
 }
 
+parameter_generation = function(df_prep, p) {
+  df = df_prep[, 1:p]
+  res = pseudolikelihood(df)
+  
+  sigma = res$sigma$est
+  mu = res$mu$est
+  
+  return(list(mu=mu, sigma=sigma))
+}
 
-subset_parameters = function(est, p) {
-  full_sigma =  est$graph
-  full_mu = est$thresholds
+small_world = function(p) {
+  sw = igraph::sample_smallworld(1, p, 2, .2)
+  adj = as.matrix(igraph::as_adjacency_matrix(sw))
   
-  selected_vars = sample(1:length(full_mu), p)
-  sigma = full_sigma[selected_vars, selected_vars]
-  mu = full_mu[selected_vars]
+  return(adj)
+}
+
+random_graph = function(p, pr=.3) {
+  rg = igraph::erdos.renyi.game(p, pr)
   
-  return(list(mu=mu, sigma=sigma/2))
+  adj = as.matrix(igraph::as_adjacency_matrix(rg))
+  
+}
+#combines the methods above to generate data given p and N and graph structure
+full_data_generation = function(data=Wenchuan, p, N, graph=NULL) {
+  
+  if (is.null(graph)) {
+    graph = matrix(1, p, p)
+  }
+  prep_df = data_preparation(data)
+  params = parameter_generation(prep_df, p)
+  
+  gr = params$sigma * graph
+  mu = params$mu
+  x = data_generation(N = N, graph = gr, mu = mu)
+  return(list(x=x, mu=mu, sigma=gr))
 }
