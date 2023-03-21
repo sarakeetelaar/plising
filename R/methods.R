@@ -1,23 +1,33 @@
 pseudolikelihood = function(data) {
-  out = tryCatch({
+  # out = tryCatch({
     
     estimators = optimize_pseudolikelihood(data)
-    se = estimators$se
-    p = ncol(data)
-    se_mu = se[1:p]
-    se_sigma = se[-(1:p)]
+    var_pl = estimators$var
     
-    mu = list(est=estimators$mu, var=se_mu)
-    sigma = list(est=estimators$sigma, var=se_sigma)
+    p = ncol(data)
+    
+    var_sigma = matrix(0, nrow = p, ncol = p)
+    
+    var_mu = var_pl[1:p]
+    var_sig = var_pl[-(1:p)]
+    var_sigma[lower.tri(var_sigma)] = var_sig
+    for (i in 1:p) {
+      for (j in 1:p) {
+        var_sigma[i, j] = var_sigma[j, i]
+      }
+    }
+    
+    mu = list(est=estimators$mu, var=var_mu)
+    sigma = list(est=estimators$sigma, var=var_sigma)
     
     return(list(mu=mu, sigma=sigma))
-  },
-  error = function(cond) {
-    message("pseudolikelihood failed")
-    message(cond)
-    return(NA)
-  })
-}
+  }
+  # error = function(cond) {
+  #   message("pseudolikelihood failed")
+  #   message(cond)
+  #   return(NA)
+  # })
+#}
 
 reduced_population = function(data, theta_0=matrix(0, p, p)) {
   out = tryCatch( 

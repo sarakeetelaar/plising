@@ -16,12 +16,11 @@ data_preparation = function(data=Wenchuan) {
   return(df)
 }
 
-parameter_generation = function(df_prep, p) {
-  df = df_prep[, 1:p]
-  res = pseudolikelihood(df)
+parameter_generation = function(p, df_prep=wenchuan[, 1:p],  graph=matrix(1, p, p)) {
+  res = IsingSampler::EstimateIsing(df_prep, responses=c(0L, 1L), method="uni", adj=graph)
   
-  sigma = res$sigma$est
-  mu = res$mu$est
+  sigma = res$graph/2
+  mu = res$thresholds
   
   return(list(mu=mu, sigma=sigma))
 }
@@ -40,16 +39,11 @@ random_graph = function(p, pr=.3) {
   
 }
 #combines the methods above to generate data given p and N and graph structure
-full_data_generation = function(data=Wenchuan, p, N, graph=NULL) {
+
+full_data_generation = function(parameters, N) {
+  gr = parameters$sigma
+  mu = parameters$mu
   
-  if (is.null(graph)) {
-    graph = matrix(1, p, p)
-  }
-  prep_df = data_preparation(data)
-  params = parameter_generation(prep_df, p)
-  
-  gr = params$sigma * graph
-  mu = params$mu
-  x = data_generation(N = N, graph = gr, mu = mu)
-  return(list(x=x, mu=mu, sigma=gr))
+  x = data_generation(N=N, graph=gr, mu=mu)
+  return(x)
 }

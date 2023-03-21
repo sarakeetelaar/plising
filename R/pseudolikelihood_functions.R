@@ -166,11 +166,11 @@ optimize_pseudolikelihood = function(x, iteration_max = 1e2, prior_var = Inf) {
       warning(paste("The optimization procedure did not convergence in", iteration_max, "iterations.",
                     sep = " "), call. = FALSE)
   }
-  se = updated$SE
+  var_pl = updated$var
   mu = diag(sigma)
   diag(sigma) = 0
   sigma = sigma/2
-  return(list(se=se, mu = mu, sigma = sigma))
+  return(list(var=var_pl, mu = mu, sigma = sigma))
 }
 
 multidimensional_update = function(x, sigma, index, suff_stat, prior_var = Inf) {
@@ -207,9 +207,10 @@ multidimensional_update = function(x, sigma, index, suff_stat, prior_var = Inf) 
   sig = sigma
   diag(sig) = 0
   mu = diag(sigma)
-  derivs = derivativeHelp(x, mu, sig)
-  sandwich = (solve(-hessian) %*% derivs %*% solve(-hessian)) / n
-  SE = diag(sandwich)
+  derivs = outerGradient(x, sig, mu)
+
+  sandwich = inv_hessian %*% derivs %*% inv_hessian / n
+  var_pl = diag(sandwich)
   # convert to eta values 
   eta = vector(length = p * (p + 1) / 2)
   eta[1:p] = diag(sigma)
@@ -232,7 +233,7 @@ multidimensional_update = function(x, sigma, index, suff_stat, prior_var = Inf) 
       sigma[t, s] = eta[row]
     }
   }
-  return(list(sigma=sigma, SE=SE))
+  return(list(sigma=sigma, var=var_pl))
 }
 
 invert_hessian = function(x, sigma, index, prior_var = Inf) {
