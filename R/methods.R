@@ -116,6 +116,7 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p), max.nodes=20) {
     p = ncol(data)
     theta = theta_0[lower.tri(theta_0, diag=TRUE)]
     for(iter in 1:1e3) {
+      print(paste("iteration", iter))
       theta_old = theta
       
       E_suf = matrix(0, nrow = p*(p+1)/2, ncol=1)
@@ -126,14 +127,17 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p), max.nodes=20) {
       y = matrix(0, nrow = p, ncol = 1)
    
       Z = normalizingConstant(theta, E_suf, E_ss, Z, y)
-      E_suf = E_suf/Z
-      E_ss = E_ss/Z
+      E_suf = E_suf
+      E_ss = E_ss
       
-      H = -N * (E_ss - E_suf %*% t(E_suf))
+      H = -N/Z * (E_ss - 1/Z*E_suf %*% t(E_suf))
 
-      grad = O - N*E_suf
-
-      theta = theta - solve(H)%*%grad
+      grad = O - N/Z *E_suf
+      print(paste("gradient", grad))
+      print(paste("hessian", H))
+      
+      theta = theta - (1/2) * solve(H)%*%grad
+      print(paste("theta = ", theta))
       ll = t(O) %*% theta - N * log(Z)
       D = sum(abs(theta-theta_old))
       if(D < sqrt(.Machine$double.eps)) {
