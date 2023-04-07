@@ -36,7 +36,7 @@ double normalizingConstant(
           suf[counter] = y[i]*y[j];
         }
         else {
-          suf[counter] = 2*y[i]*y[j];
+          suf[counter] = y[i]*y[j];
         }
         counter++;
       }
@@ -102,7 +102,7 @@ double hessenNorm(
           suf[counter] = yHr[i]*yHr[j];
         }
         else {
-          suf[counter] = 2*yHr[i]*yHr[j];
+          suf[counter] = yHr[i]*yHr[j];
         }
         counter++;
       }

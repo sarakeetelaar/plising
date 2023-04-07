@@ -59,69 +59,6 @@ onedimensional_update = function(x, sigma, suff_stat, prior_var = Inf) {
 }
 # 6 -----------------------------------------------------------------------------
 
-# Multidimensional Newton Raphson algorithm pseudolikelihood updates used within the main
-# optimization function to optimize the pseudologlikelihood parameters
-multidimensional_update2 = function(x, sigma, index, suff_stat, prior_var = Inf) {
-  n = nrow(x)
-  p = ncol(x)
-  
-  # compute vector of first-order derivatives (main effects) 
-  prob = matrix(0, nrow = n, ncol = p)
-  derivatives = vector(length = p * (p + 1) / 2)
-  for(s in 1:p) {
-    phi = sigma[s, s] + x[, -s] %*% sigma[-s, s]
-    prob[, s] = expit(phi)
-    derivatives[s] = suff_stat[s, s] - sum(prob[, s])
-    derivatives[s] = derivatives[s] - sigma[s, s] / prior_var
-  }
-  
-  # compute vector of first-order derivatives (interaction effects) 
-  for(s in 1:(p - 1)) {
-    for(t in (s + 1): p) {
-      row = p + index[index[, 2] == s & index[, 3] == t, 1]
-      derivatives[row] = 2 * suff_stat[s, t] - x[, t] %*% prob[, s]
-      derivatives[row] = derivatives[row] - x[, s] %*% prob[, t]
-      derivatives[row] = derivatives[row] - sigma[s, t] / prior_var
-    }
-  }
-  
-  sig = sigma
-  diag(sig) = 0
-  mu = diag(sigma)
-  hessian = hessian_pl(x, sig, mu)
-  inv_hessian = hessian$inverse
-  hessian = hessian$hessian
-  # 
-  # derivs = derivativeHelp(x, mu, sig)
-  # sandwich = (solve(-hessian) %*% derivs %*% solve(-hessian)) / n
-  sandwich_grad = outerGradient(x, mu, sig)
-  var_pl = inv_hessian %*% sandwich_grad %*% inv_hessian
-  vars = diag(var_pl)
-  # convert to eta values 
-  eta = vector(length = p * (p + 1) / 2)
-  eta[1:p] = diag(sigma)
-  for(s in 1:(p - 1)) {
-    for(t in (s + 1):p) {
-      row = index[index[,2] == s & index[, 3] == t, 1] + p
-      eta[row] = sigma[s, t]
-    }
-  }
-  
-  # Newton - Raphson update 
-  eta = eta - inv_hessian %*% derivatives
-  
-  # revert to sigma values 
-  diag(sigma) = eta[1:p]
-  for(s in 1:(p - 1)) {
-    for(t in (s + 1):p) {
-      row = p + index[index[,2] == s & index[, 3] == t, 1]
-      sigma[s, t] = eta[row]
-      sigma[t, s] = eta[row]
-    }
-  }
-  return(list(sigma=sigma, SE=vars))
-}
-
 optimize_pseudolikelihood = function(x, iteration_max = 1e2, prior_var = Inf) {
   p = ncol(x)
   n = nrow(x)
@@ -152,6 +89,9 @@ optimize_pseudolikelihood = function(x, iteration_max = 1e2, prior_var = Inf) {
                                        suff_stat = suff_stat,
                                        prior_var = prior_var)
     sigma = updated$sigma
+    temp_var = updated$var_pl
+    
+
     # update log of pseudolikelihood
     log_pseudolikelihood_old = log_pseudolikelihood
     log_pseudolikelihood = log_pseudolikelihood(sigma = sigma,
@@ -160,17 +100,23 @@ optimize_pseudolikelihood = function(x, iteration_max = 1e2, prior_var = Inf) {
     log_pseudolikelihood_storage[iteration] = log_pseudolikelihood #store the pseudolik values for later
     
     difference = abs(log_pseudolikelihood - log_pseudolikelihood_old)
-    if(difference < sqrt(.Machine$double.eps)) break
+    
+    if(difference < 1e-07) break
     
     if(iteration == iteration_max)
       warning(paste("The optimization procedure did not convergence in", iteration_max, "iterations.",
                     sep = " "), call. = FALSE)
   }
-  var_pl = updated$var
+  
   mu = diag(sigma)
   diag(sigma) = 0
+  
+  var_pl = get_all_variances(x, sigma, mu)
   sigma = sigma/2
-  return(list(var=var_pl, mu = mu, sigma = sigma))
+
+  raw_var = var_pl$raw
+  sandwich_var = var_pl$sandwich
+  return(list(mu = mu, sigma = sigma, var=raw_var, sandwich=sandwich_var))
 }
 
 multidimensional_update = function(x, sigma, index, suff_stat, prior_var = Inf) {
@@ -208,9 +154,10 @@ multidimensional_update = function(x, sigma, index, suff_stat, prior_var = Inf) 
   diag(sig) = 0
   mu = diag(sigma)
   derivs = outerGradient(x, sig, mu)
-
-  sandwich = inv_hessian %*% derivs %*% inv_hessian / n
+  sandwich = (-inv_hessian) %*% derivs %*% (-inv_hessian) 
   var_pl = diag(sandwich)
+  raw_var = diag(-inv_hessian)
+
   # convert to eta values 
   eta = vector(length = p * (p + 1) / 2)
   eta[1:p] = diag(sigma)
@@ -233,7 +180,7 @@ multidimensional_update = function(x, sigma, index, suff_stat, prior_var = Inf) 
       sigma[t, s] = eta[row]
     }
   }
-  return(list(sigma=sigma, var=var_pl))
+  return(list(sigma=sigma, var=var_pl, raw_var=raw_var))
 }
 
 invert_hessian = function(x, sigma, index, prior_var = Inf) {
@@ -255,7 +202,7 @@ invert_hessian = function(x, sigma, index, prior_var = Inf) {
   # compute int_hessian
   main_hessian = matrix(0, nrow = p, ncol = p)
   for (s in 1:p) {
-    main_hessian[s,s] = -sum(pq[, s]*(1-pq[, s])) - 1
+    main_hessian[s,s] = -sum(pq[, s]*(1-pq[, s]))#CHECK
   }
   
   int_hessian = matrix(0, nrow = p * (p - 1) / 2, ncol = p * (p-1) / 2)
@@ -347,9 +294,33 @@ invert_hessian = function(x, sigma, index, prior_var = Inf) {
   inv_hessian[index_int, index_main] = t(inv_hessian[index_main, index_int])
   inv_hessian[index_main, index_main] = inv_main -
     inv_hessian[index_main, index_int] %*% t(cross_hessian) %*% inv_main
-  
+
   
   return(list(inv_hessian=inv_hessian, hessian=hes))
 }
 
 
+full_hessian = function(x, sigma, mu) {
+  p  = ncol(x)
+  nparam = p * (p + 1) / 2
+  
+  hessian = matrix(0, nparam, nparam)
+  hessian[1:p, 1:p] = createMuHessian(sigma, mu, x)
+  hessian[-(1:p), -(1:p)] = createSigmaHessian(sigma, mu, x)
+  crosshes = createCrossHessian(sigma, mu, x)
+  hessian[1:p, -(1:p)] = crosshes
+  hessian[-(1:p), 1:p] = t(crosshes)
+  
+  return(hessian)
+}
+
+
+get_all_variances = function(x, sigma, mu) {
+  full_hessian = full_hessian(x, sigma, mu)
+  raw_variance = diag(-solve(full_hessian))
+  
+  sandwich_variance = diag((- solve(full_hessian)) %*% outerGradient(x, sigma, mu) %*% (-solve(full_hessian)))
+  
+  return(list(raw=raw_variance, sandwich=sandwich_variance))
+  
+}

@@ -1,47 +1,38 @@
 pseudolikelihood = function(data) {
-  # out = tryCatch({
-    
-    estimators = optimize_pseudolikelihood(data)
-    var_pl = estimators$var
-    
-    p = ncol(data)
-    
-    var_sigma = matrix(0, nrow = p, ncol = p)
-    
-    var_mu = var_pl[1:p]
-    var_sig = var_pl[-(1:p)]
-    var_sigma[lower.tri(var_sigma)] = var_sig
-    for (i in 1:p) {
-      for (j in 1:p) {
-        var_sigma[i, j] = var_sigma[j, i]
-      }
-    }
-    
-    mu = list(est=estimators$mu, var=var_mu)
-    sigma = list(est=estimators$sigma, var=var_sigma)
-    
-    return(list(mu=mu, sigma=sigma))
-  }
-  # error = function(cond) {
-  #   message("pseudolikelihood failed")
-  #   message(cond)
-  #   return(NA)
-  # })
-#}
+  out = tryCatch({
+      
+      estimators = optimize_pseudolikelihood(data)
+      var_raw = estimators$var
+      sandwich_var = estimators$sandwich
+      #var_boot = bootstrap_var_pl(data, B=1e2)
+      
+      p = ncol(data)
+      
 
-reduced_population = function(data, theta_0=matrix(0, p, p)) {
+      # mu = list(est=estimators$mu, var=var_mu)
+      # sigma = list(est=estimators$sigma, var=var_sigma)
+      # 
+      return(list(mu=estimators$mu, sigma=estimators$sigma, var_raw=var_raw, var_sandwich=sandwich_var))
+    },
+  error = function(cond) {
+    message("pseudolikelihood failed")
+    message(cond)
+    return(NA)
+  })
+}
+
+reduced_population = function(data) {
   out = tryCatch( 
     {
       mu = list()
       sigma = list()
       N = nrow(data)
-      O = t(data) %*% data * 2
-      diag(O) = diag(O)/2
+      O = t(data) %*% data
       O = O[lower.tri(O, diag=TRUE)]
       
       ys = unique(data)
       p = ncol(data)
-      theta = theta_0[lower.tri(theta_0, diag=TRUE)]
+      theta = matrix(0, p * (p + 1) / 2, 1)
       for(iter in 1:1e3) {
         theta_old = theta
         
@@ -56,8 +47,7 @@ reduced_population = function(data, theta_0=matrix(0, p, p)) {
         
         H = -N * (E_ss - E_suf %*% t(E_suf))
         grad = O - N*E_suf
-        
-        
+        print(paste("iteration", iter))
         theta = theta - solve(H)%*%grad
         
         ll = t(O) %*% theta - N * log(Z)
@@ -86,10 +76,11 @@ reduced_population = function(data, theta_0=matrix(0, p, p)) {
       diag(theta_l) = 0
       
       mu$est = mu_ml
-      sigma$est = theta_l
+      sigma$est = theta_l/2
       
       mu$var = SE_mu
-      sigma$var = SE_sigma
+      sigma$var = fill_matrix(SE_sigma)
+      
       return(list(mu=mu, sigma=sigma))
     },
     error = function(cond) {
@@ -109,14 +100,16 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p), max.nodes=20) {
     }
     mu = sigma = list()
     N = nrow(data)
-    O = t(data) %*% data * 2
-    diag(O) = diag(O)/2
+    O = t(data) %*% data
+    diag(O) = diag(O)
     O = O[lower.tri(O, diag=TRUE)]
     
     p = ncol(data)
     theta = theta_0[lower.tri(theta_0, diag=TRUE)]
+    ll = 1e10
+    iteration = 0
     for(iter in 1:1e3) {
-      print(paste("iteration", iter))
+      ll_old = ll
       theta_old = theta
       
       E_suf = matrix(0, nrow = p*(p+1)/2, ncol=1)
@@ -131,20 +124,17 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p), max.nodes=20) {
       E_ss = E_ss
       
       H = -N/Z * (E_ss - 1/Z*E_suf %*% t(E_suf))
-
       grad = O - N/Z *E_suf
-      print(paste("gradient", grad))
-      print(paste("hessian", H))
       
-      theta = theta - (1/2) * solve(H)%*%grad
-      print(paste("theta = ", theta))
+      theta = theta - solve(H)%*%grad / 5
       ll = t(O) %*% theta - N * log(Z)
-      D = sum(abs(theta-theta_old))
+      D = sum(abs(ll - ll_old))
+      iteration = iteration+1
       if(D < sqrt(.Machine$double.eps)) {
         break
       }
     }
-
+    print(paste("solved in", iteration, "iterations"))
     SE = diag(solve(-H))
     indices = re_index(p)
     
@@ -165,17 +155,44 @@ exact_likelihood = function(data, theta_0=matrix(0, p, p), max.nodes=20) {
     
     mu$est = mu_ml
     mu$var = SE_mu
-    sigma$est = theta_l
+    sigma$est = theta_l/2
     sigma$var = SE_sigma
     
     return(list(mu=mu, sigma=sigma))
   },
   error = function(cond) {
+    # estimators_sacha = psychonetrics::Ising(data, vars=1:p)
+    # estimators = estimators_sacha %>% runmodel
+    # ests = estimators@parameters[["est"]]
+    # mu = ests[1:p]
+    # sigvals = ests[-(1:p)]
+    # sigvals = ests[-length(sigvals)]
+    # sigma = matrix(0, p, p)
+    # sigma[lower.tri(sigma)] = sigvals
+    # sigma = (sigma + t(sigma)) / 2
+    # ses = estimators@parameters[["se"]]
+    # se_mu = ses[1:p]^2
+    # se_sig = ses[-(1:p)]
+    # se_sig = se_sig[-length(se_sig)]^2
+    # 
+    # mu = list(est=mu, var=se_mu)
+    # sigma = list(est=sigma, var=se_sig)
+    # return(list(mu=mu, sigma=sigma))
+    
     message("exact likelihood failed")
     message(cond)
     return(NA)
   }
   )
+}
+
+maximum_likelihood = function(data) {
+  p = ncol(data)
+  model = psychonetrics::Ising(data)
+  ml = model %>% runmodel
+  
+  results = transform_psych_results(ml, p)
+  return(results)
 }
 
 logistic_regression = function(data) {
@@ -188,13 +205,8 @@ logistic_regression = function(data) {
     varsig = matrix(0, p, p)
     df = data.frame(data)
     for (i in 1:p) {
-      params = log_reg(df, i)
-      thisy = df[,i]
-      thisx = df[,-i]
-      thisdata = data.frame(cbind(thisy, thisx))
-      
-      bootstr = boot::boot(data=thisdata, statistic=bootstrap_lr, R=1e3)
-      vars = diag(cov(bootstr$t))
+      params = log_reg(df, i) 
+      vars = bootstrap_var(df, i)
       varsig[i, -i] = vars[-1]
       varmu[i] = vars[1]
       sig[i, -i] = params[-1]

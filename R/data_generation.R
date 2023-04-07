@@ -1,9 +1,9 @@
-data_generation = function(N=1000, graph, mu, sigma=1) {
+data_generation = function(N=1000, graph, mu) {
   p = ncol(graph)
   X = matrix(0, nrow=N, ncol=p)
   for(iter in 1:1e3) {
     for(i in 1:p) {
-      X[, i] = 1 * (rlogis(N) <= mu[i] + 2*sigma*X %*% graph[, i])
+      X[, i] = 1 * (rlogis(N) <= mu[i] + 2 * X %*% graph[, i])
     }
   }
   return(X)
@@ -17,10 +17,13 @@ data_preparation = function(data=Wenchuan) {
 }
 
 parameter_generation = function(p, df_prep=wenchuan[, 1:p],  graph=matrix(1, p, p)) {
-  res = IsingSampler::EstimateIsing(df_prep, responses=c(0L, 1L), method="uni", adj=graph)
+  #res = IsingSampler::EstimateIsing(df_prep, responses=c(0L, 1L), method="ll", adj=graph)
+  res = psychonetrics::Ising(df_prep, omega=graph)
+  res = res %>% runmodel
+  res = transform_psych_results(res, p)
   
-  sigma = res$graph/2
-  mu = res$thresholds
+  sigma = res$sigma$est/2
+  mu = res$mu$est
   
   return(list(mu=mu, sigma=sigma))
 }
@@ -36,6 +39,8 @@ random_graph = function(p, pr=.3) {
   rg = igraph::erdos.renyi.game(p, pr)
   
   adj = as.matrix(igraph::as_adjacency_matrix(rg))
+  
+  return(adj)
   
 }
 #combines the methods above to generate data given p and N and graph structure

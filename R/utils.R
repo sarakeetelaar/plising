@@ -37,3 +37,31 @@ indexing <- function(p) {
   }
   return(index)
 }
+transform_psych_results = function(res, p) {
+  mlres = res@parameters[["est"]]
+  mlses = res@parameters[["se"]]
+  l_param = length(mlres)
+  sig_index = (1:(l_param - 1))[-(1: p)]
+  mu_index = 1: p
+  
+  muest = mlres[mu_index]
+  muvar = mlses[mu_index] ^ 2
+  
+  sigest = mlres[sig_index]
+  sigvar = mlses[sig_index] ^ 2
+  
+  
+  sigest = fill_matrix(sigest, p)
+  sigvar = fill_matrix(sigvar, p)
+  
+  return(list(mu=list(est=muest, var=muvar),
+              sigma = list(est=sigest, var=sigvar)))
+}
+
+fill_matrix = function(sigvals, p) {
+  sigma = matrix(0, p, p)
+  sigma[lower.tri(sigma)] = sigvals
+  sigma = sigma + t(sigma)
+  
+  return(sigma)
+}
