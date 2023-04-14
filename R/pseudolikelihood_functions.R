@@ -101,7 +101,7 @@ optimize_pseudolikelihood = function(x, iteration_max = 1e2, prior_var = Inf) {
     
     difference = abs(log_pseudolikelihood - log_pseudolikelihood_old)
     
-    if(difference < 1e-07) break
+    if(difference < sqrt(.Machine$double.eps)) break
     
     if(iteration == iteration_max)
       warning(paste("The optimization procedure did not convergence in", iteration_max, "iterations.",
@@ -320,7 +320,7 @@ get_all_variances = function(x, sigma, mu) {
   raw_variance = diag(-solve(full_hessian))
   
   sandwich_variance = diag((- solve(full_hessian)) %*% outerGradient(x, sigma, mu) %*% (-solve(full_hessian)))
-  
+
   return(list(raw=raw_variance, sandwich=sandwich_variance))
   
 }
