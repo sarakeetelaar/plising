@@ -1,5 +1,10 @@
-#helper function to get indices of mu
-re_index = function(p=10) {
+##############################################################################
+# File contains all general R helper functions
+##############################################################################
+
+#helper function to get indices of the main effects
+# in a vector of parameters for graph size p
+re_index = function(p) {
   start = 1
   indices = rep(0, p)
   count = 0
@@ -18,6 +23,7 @@ expit <- function(phi) {
   return(exp(phi) / (1 + exp(phi)))
 }
 
+# quadratic logistic function
 nexpit <- function(phi) {
   return(exp(phi) / (1 + exp(phi)) ^ 2)
 }
@@ -37,6 +43,9 @@ indexing <- function(p) {
   }
   return(index)
 }
+
+# put the results for the psychonetrics likelihood estimation
+# in the desired format with estimators and variances in a list
 transform_psych_results = function(res, p) {
   mlres = res@parameters[["est"]]
   mlses = res@parameters[["se"]]
@@ -58,10 +67,26 @@ transform_psych_results = function(res, p) {
               sigma = list(est=sigest, var=sigvar)))
 }
 
+# matrix that converts vector of lower triangle
+# to symmetric p * p matrix
 fill_matrix = function(sigvals, p) {
   sigma = matrix(0, p, p)
   sigma[lower.tri(sigma)] = sigvals
   sigma = sigma + t(sigma)
   
   return(sigma)
+}
+
+# creates sample with repetitions, used to select rows for bootstrap sample
+sampler = function(n) {
+  samp = sample(1:n, n, replace=TRUE)
+  return(samp)
+}
+
+# removes missing variables for the bootstrap samples
+# when failed the values are equal to -1
+remove_missing_rows = function(theta) {
+  theta = theta[, colMeans(theta) != -1]
+  theta = theta[, colSums(is.na(theta))==0]
+  return(theta)
 }

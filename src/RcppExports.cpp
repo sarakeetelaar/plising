@@ -10,9 +10,9 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// expprob
-double expprob(NumericMatrix x, NumericMatrix sigma, NumericVector mu, int v_ind, int q_ind);
-RcppExport SEXP _plising_expprob(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP v_indSEXP, SEXP q_indSEXP) {
+// expprobPL
+double expprobPL(NumericMatrix x, NumericMatrix sigma, NumericVector mu, int v_ind, int q_ind);
+RcppExport SEXP _plising_expprobPL(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP v_indSEXP, SEXP q_indSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -21,114 +21,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
     Rcpp::traits::input_parameter< int >::type v_ind(v_indSEXP);
     Rcpp::traits::input_parameter< int >::type q_ind(q_indSEXP);
-    rcpp_result_gen = Rcpp::wrap(expprob(x, sigma, mu, v_ind, q_ind));
-    return rcpp_result_gen;
-END_RCPP
-}
-// muHessian
-NumericMatrix muHessian(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
-RcppExport SEXP _plising_muHessian(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
-    rcpp_result_gen = Rcpp::wrap(muHessian(x, sigma, mu));
-    return rcpp_result_gen;
-END_RCPP
-}
-// sigmaHessian
-NumericVector sigmaHessian(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
-RcppExport SEXP _plising_sigmaHessian(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
-    rcpp_result_gen = Rcpp::wrap(sigmaHessian(x, sigma, mu));
-    return rcpp_result_gen;
-END_RCPP
-}
-// crossHessian
-NumericMatrix crossHessian(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
-RcppExport SEXP _plising_crossHessian(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
-    rcpp_result_gen = Rcpp::wrap(crossHessian(x, sigma, mu));
-    return rcpp_result_gen;
-END_RCPP
-}
-// singleGradientPL
-NumericVector singleGradientPL(NumericMatrix x, NumericMatrix sigma, NumericVector mu, int obs);
-RcppExport SEXP _plising_singleGradientPL(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP obsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< int >::type obs(obsSEXP);
-    rcpp_result_gen = Rcpp::wrap(singleGradientPL(x, sigma, mu, obs));
-    return rcpp_result_gen;
-END_RCPP
-}
-// outerGradient
-NumericMatrix outerGradient(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
-RcppExport SEXP _plising_outerGradient(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
-    rcpp_result_gen = Rcpp::wrap(outerGradient(x, sigma, mu));
-    return rcpp_result_gen;
-END_RCPP
-}
-// normalizingConstant
-double normalizingConstant(NumericVector theta, NumericVector Esuf, NumericMatrix Ess, double Z, NumericVector y);
-RcppExport SEXP _plising_normalizingConstant(SEXP thetaSEXP, SEXP EsufSEXP, SEXP EssSEXP, SEXP ZSEXP, SEXP ySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type Esuf(EsufSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type Ess(EssSEXP);
-    Rcpp::traits::input_parameter< double >::type Z(ZSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(normalizingConstant(theta, Esuf, Ess, Z, y));
-    return rcpp_result_gen;
-END_RCPP
-}
-// symmetrizeMatrix
-NumericMatrix symmetrizeMatrix(NumericMatrix theta);
-RcppExport SEXP _plising_symmetrizeMatrix(SEXP thetaSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type theta(thetaSEXP);
-    rcpp_result_gen = Rcpp::wrap(symmetrizeMatrix(theta));
-    return rcpp_result_gen;
-END_RCPP
-}
-// hessenNorm
-double hessenNorm(NumericVector thetaH, NumericVector EsufH, NumericMatrix EssH, double ZH, IntegerMatrix yH);
-RcppExport SEXP _plising_hessenNorm(SEXP thetaHSEXP, SEXP EsufHSEXP, SEXP EssHSEXP, SEXP ZHSEXP, SEXP yHSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type thetaH(thetaHSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type EsufH(EsufHSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type EssH(EssHSEXP);
-    Rcpp::traits::input_parameter< double >::type ZH(ZHSEXP);
-    Rcpp::traits::input_parameter< IntegerMatrix >::type yH(yHSEXP);
-    rcpp_result_gen = Rcpp::wrap(hessenNorm(thetaH, EsufH, EssH, ZH, yH));
+    rcpp_result_gen = Rcpp::wrap(expprobPL(x, sigma, mu, v_ind, q_ind));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -159,19 +52,64 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mapSigmaIndex
+int mapSigmaIndex(int index1, int index2, int p);
+RcppExport SEXP _plising_mapSigmaIndex(SEXP index1SEXP, SEXP index2SEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type index1(index1SEXP);
+    Rcpp::traits::input_parameter< int >::type index2(index2SEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(mapSigmaIndex(index1, index2, p));
+    return rcpp_result_gen;
+END_RCPP
+}
+// symmetrizeLR
+NumericMatrix symmetrizeLR(NumericMatrix theta);
+RcppExport SEXP _plising_symmetrizeLR(SEXP thetaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type theta(thetaSEXP);
+    rcpp_result_gen = Rcpp::wrap(symmetrizeLR(theta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// bootstrapVariances
+NumericVector bootstrapVariances(IntegerMatrix data, Function func, Function sampler, Function removemissing);
+RcppExport SEXP _plising_bootstrapVariances(SEXP dataSEXP, SEXP funcSEXP, SEXP samplerSEXP, SEXP removemissingSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Function >::type func(funcSEXP);
+    Rcpp::traits::input_parameter< Function >::type sampler(samplerSEXP);
+    Rcpp::traits::input_parameter< Function >::type removemissing(removemissingSEXP);
+    rcpp_result_gen = Rcpp::wrap(bootstrapVariances(data, func, sampler, removemissing));
+    return rcpp_result_gen;
+END_RCPP
+}
+// symmetrizeMatrix
+NumericMatrix symmetrizeMatrix(NumericMatrix theta);
+RcppExport SEXP _plising_symmetrizeMatrix(SEXP thetaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type theta(thetaSEXP);
+    rcpp_result_gen = Rcpp::wrap(symmetrizeMatrix(theta));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_plising_expprob", (DL_FUNC) &_plising_expprob, 5},
-    {"_plising_muHessian", (DL_FUNC) &_plising_muHessian, 3},
-    {"_plising_sigmaHessian", (DL_FUNC) &_plising_sigmaHessian, 3},
-    {"_plising_crossHessian", (DL_FUNC) &_plising_crossHessian, 3},
-    {"_plising_singleGradientPL", (DL_FUNC) &_plising_singleGradientPL, 4},
-    {"_plising_outerGradient", (DL_FUNC) &_plising_outerGradient, 3},
-    {"_plising_normalizingConstant", (DL_FUNC) &_plising_normalizingConstant, 5},
-    {"_plising_symmetrizeMatrix", (DL_FUNC) &_plising_symmetrizeMatrix, 1},
-    {"_plising_hessenNorm", (DL_FUNC) &_plising_hessenNorm, 5},
+    {"_plising_expprobPL", (DL_FUNC) &_plising_expprobPL, 5},
     {"_plising_sumSigma", (DL_FUNC) &_plising_sumSigma, 4},
     {"_plising_derivativeHelp", (DL_FUNC) &_plising_derivativeHelp, 3},
+    {"_plising_mapSigmaIndex", (DL_FUNC) &_plising_mapSigmaIndex, 3},
+    {"_plising_symmetrizeLR", (DL_FUNC) &_plising_symmetrizeLR, 1},
+    {"_plising_bootstrapVariances", (DL_FUNC) &_plising_bootstrapVariances, 4},
+    {"_plising_symmetrizeMatrix", (DL_FUNC) &_plising_symmetrizeMatrix, 1},
     {NULL, NULL, 0}
 };
 
