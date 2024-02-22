@@ -40,3 +40,20 @@ maximum_likelihood <- function(data) {
   })
 }
 
+redo_variances = function(params, N, seed) {
+  set.seed(seed)
+  x <- full_data_generation(params, N)
+  mu <- params$mu
+  sigma <- params$sigma
+  
+  p <- length(mu)
+  
+  pl <- pseudolikelihood(x)
+  
+  plsig <- pl$sigma$est
+  plmu <- pl$mu$est
+  indices <- indexing(p)
+  
+  vars <- get_all_variances(x, plsig, plmu, indices)
+  return(list(vars = vars, p =p, N = N))
+}

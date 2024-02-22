@@ -10,6 +10,249 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// gradient_thresholds_pseudolikelihood
+NumericVector gradient_thresholds_pseudolikelihood(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories);
+RcppExport SEXP _plising_gradient_thresholds_pseudolikelihood(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    rcpp_result_gen = Rcpp::wrap(gradient_thresholds_pseudolikelihood(interactions, thresholds, observations, no_categories));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gradient_thresholds_pseudoposterior
+NumericVector gradient_thresholds_pseudoposterior(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories, double threshold_alpha, double threshold_beta);
+RcppExport SEXP _plising_gradient_thresholds_pseudoposterior(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP, SEXP threshold_alphaSEXP, SEXP threshold_betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    Rcpp::traits::input_parameter< double >::type threshold_alpha(threshold_alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type threshold_beta(threshold_betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(gradient_thresholds_pseudoposterior(interactions, thresholds, observations, no_categories, threshold_alpha, threshold_beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gradient_interactions_pseudolikelihood
+NumericVector gradient_interactions_pseudolikelihood(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories);
+RcppExport SEXP _plising_gradient_interactions_pseudolikelihood(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    rcpp_result_gen = Rcpp::wrap(gradient_interactions_pseudolikelihood(interactions, thresholds, observations, no_categories));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gradient_interactions_pseudoposterior_normal
+NumericVector gradient_interactions_pseudoposterior_normal(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories, NumericMatrix interaction_var);
+RcppExport SEXP _plising_gradient_interactions_pseudoposterior_normal(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP, SEXP interaction_varSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type interaction_var(interaction_varSEXP);
+    rcpp_result_gen = Rcpp::wrap(gradient_interactions_pseudoposterior_normal(interactions, thresholds, observations, no_categories, interaction_var));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gradient_interactions_pseudoposterior_cauchy
+NumericVector gradient_interactions_pseudoposterior_cauchy(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories, double cauchy_scale);
+RcppExport SEXP _plising_gradient_interactions_pseudoposterior_cauchy(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP, SEXP cauchy_scaleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    Rcpp::traits::input_parameter< double >::type cauchy_scale(cauchy_scaleSEXP);
+    rcpp_result_gen = Rcpp::wrap(gradient_interactions_pseudoposterior_cauchy(interactions, thresholds, observations, no_categories, cauchy_scale));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hessian_thresholds_pseudolikelihood
+NumericMatrix hessian_thresholds_pseudolikelihood(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories);
+RcppExport SEXP _plising_hessian_thresholds_pseudolikelihood(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    rcpp_result_gen = Rcpp::wrap(hessian_thresholds_pseudolikelihood(interactions, thresholds, observations, no_categories));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hessian_thresholds_pseudoposterior
+NumericMatrix hessian_thresholds_pseudoposterior(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories, double threshold_alpha, double threshold_beta);
+RcppExport SEXP _plising_hessian_thresholds_pseudoposterior(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP, SEXP threshold_alphaSEXP, SEXP threshold_betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    Rcpp::traits::input_parameter< double >::type threshold_alpha(threshold_alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type threshold_beta(threshold_betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(hessian_thresholds_pseudoposterior(interactions, thresholds, observations, no_categories, threshold_alpha, threshold_beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hessian_interactions_pseudolikelihood
+NumericMatrix hessian_interactions_pseudolikelihood(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories);
+RcppExport SEXP _plising_hessian_interactions_pseudolikelihood(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    rcpp_result_gen = Rcpp::wrap(hessian_interactions_pseudolikelihood(interactions, thresholds, observations, no_categories));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hessian_interactions_pseudoposterior_normal
+NumericMatrix hessian_interactions_pseudoposterior_normal(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories, NumericMatrix interaction_var);
+RcppExport SEXP _plising_hessian_interactions_pseudoposterior_normal(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP, SEXP interaction_varSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type interaction_var(interaction_varSEXP);
+    rcpp_result_gen = Rcpp::wrap(hessian_interactions_pseudoposterior_normal(interactions, thresholds, observations, no_categories, interaction_var));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hessian_interactions_pseudoposterior_cauchy
+NumericMatrix hessian_interactions_pseudoposterior_cauchy(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories, double cauchy_scale);
+RcppExport SEXP _plising_hessian_interactions_pseudoposterior_cauchy(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP, SEXP cauchy_scaleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    Rcpp::traits::input_parameter< double >::type cauchy_scale(cauchy_scaleSEXP);
+    rcpp_result_gen = Rcpp::wrap(hessian_interactions_pseudoposterior_cauchy(interactions, thresholds, observations, no_categories, cauchy_scale));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hessian_crossparameters
+NumericMatrix hessian_crossparameters(NumericMatrix interactions, NumericMatrix thresholds, IntegerMatrix observations, IntegerVector no_categories);
+RcppExport SEXP _plising_hessian_crossparameters(SEXP interactionsSEXP, SEXP thresholdsSEXP, SEXP observationsSEXP, SEXP no_categoriesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type interactions(interactionsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type thresholds(thresholdsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type observations(observationsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type no_categories(no_categoriesSEXP);
+    rcpp_result_gen = Rcpp::wrap(hessian_crossparameters(interactions, thresholds, observations, no_categories));
+    return rcpp_result_gen;
+END_RCPP
+}
+// expprob
+double expprob(NumericMatrix x, NumericMatrix sigma, NumericVector mu, int v_ind, int q_ind);
+RcppExport SEXP _plising_expprob(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP v_indSEXP, SEXP q_indSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< int >::type v_ind(v_indSEXP);
+    Rcpp::traits::input_parameter< int >::type q_ind(q_indSEXP);
+    rcpp_result_gen = Rcpp::wrap(expprob(x, sigma, mu, v_ind, q_ind));
+    return rcpp_result_gen;
+END_RCPP
+}
+// muHessian
+NumericMatrix muHessian(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
+RcppExport SEXP _plising_muHessian(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(muHessian(x, sigma, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sigmaHessian
+NumericVector sigmaHessian(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
+RcppExport SEXP _plising_sigmaHessian(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(sigmaHessian(x, sigma, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// crossHessian
+NumericMatrix crossHessian(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
+RcppExport SEXP _plising_crossHessian(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(crossHessian(x, sigma, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// singleGradientPL
+NumericVector singleGradientPL(NumericMatrix x, NumericMatrix sigma, NumericVector mu, int obs);
+RcppExport SEXP _plising_singleGradientPL(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP obsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< int >::type obs(obsSEXP);
+    rcpp_result_gen = Rcpp::wrap(singleGradientPL(x, sigma, mu, obs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// outerGradient
+NumericMatrix outerGradient(NumericMatrix x, NumericMatrix sigma, NumericVector mu);
+RcppExport SEXP _plising_outerGradient(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(outerGradient(x, sigma, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // expprobPL
 double expprobPL(NumericMatrix x, NumericMatrix sigma, NumericVector mu, int v_ind, int q_ind);
 RcppExport SEXP _plising_expprobPL(SEXP xSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP v_indSEXP, SEXP q_indSEXP) {
@@ -103,6 +346,23 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_plising_gradient_thresholds_pseudolikelihood", (DL_FUNC) &_plising_gradient_thresholds_pseudolikelihood, 4},
+    {"_plising_gradient_thresholds_pseudoposterior", (DL_FUNC) &_plising_gradient_thresholds_pseudoposterior, 6},
+    {"_plising_gradient_interactions_pseudolikelihood", (DL_FUNC) &_plising_gradient_interactions_pseudolikelihood, 4},
+    {"_plising_gradient_interactions_pseudoposterior_normal", (DL_FUNC) &_plising_gradient_interactions_pseudoposterior_normal, 5},
+    {"_plising_gradient_interactions_pseudoposterior_cauchy", (DL_FUNC) &_plising_gradient_interactions_pseudoposterior_cauchy, 5},
+    {"_plising_hessian_thresholds_pseudolikelihood", (DL_FUNC) &_plising_hessian_thresholds_pseudolikelihood, 4},
+    {"_plising_hessian_thresholds_pseudoposterior", (DL_FUNC) &_plising_hessian_thresholds_pseudoposterior, 6},
+    {"_plising_hessian_interactions_pseudolikelihood", (DL_FUNC) &_plising_hessian_interactions_pseudolikelihood, 4},
+    {"_plising_hessian_interactions_pseudoposterior_normal", (DL_FUNC) &_plising_hessian_interactions_pseudoposterior_normal, 5},
+    {"_plising_hessian_interactions_pseudoposterior_cauchy", (DL_FUNC) &_plising_hessian_interactions_pseudoposterior_cauchy, 5},
+    {"_plising_hessian_crossparameters", (DL_FUNC) &_plising_hessian_crossparameters, 4},
+    {"_plising_expprob", (DL_FUNC) &_plising_expprob, 5},
+    {"_plising_muHessian", (DL_FUNC) &_plising_muHessian, 3},
+    {"_plising_sigmaHessian", (DL_FUNC) &_plising_sigmaHessian, 3},
+    {"_plising_crossHessian", (DL_FUNC) &_plising_crossHessian, 3},
+    {"_plising_singleGradientPL", (DL_FUNC) &_plising_singleGradientPL, 4},
+    {"_plising_outerGradient", (DL_FUNC) &_plising_outerGradient, 3},
     {"_plising_expprobPL", (DL_FUNC) &_plising_expprobPL, 5},
     {"_plising_sumSigma", (DL_FUNC) &_plising_sumSigma, 4},
     {"_plising_derivativeHelp", (DL_FUNC) &_plising_derivativeHelp, 3},

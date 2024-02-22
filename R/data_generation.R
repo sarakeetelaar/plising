@@ -27,13 +27,22 @@ data_preparation = function(data) {
 }
 
 # Generates adjacency graph of a small world graph given size p
+# Generates adjacency graph of a small world graph given size p
 small_world = function(p) {
   
   sw <- igraph::sample_smallworld(1, p, 2, .2)
+  check = qgraph::smallworldness(sw)
+  check = check[1]
+  pr = .3
+  while ((check < 1) & (pr < 1)) {
+    sw = igraph::sample_smallworld(1, p, 2, pr)
+    check = qgraph::smallworldness(sw)
+    check = check[1]
+    pr = pr + .1
+  }
   adj <- as.matrix(igraph::as_adjacency_matrix(sw))
   return(adj)
 }
-
 # Generate adjacency graph of a random graph given size p
 random_graph = function(p) {
   

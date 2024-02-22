@@ -55,7 +55,7 @@ onedimensional_update = function(x, sigma, suff_stat) {
 }
 
 # Performs the newton raphson optimiation for given data set 
-optimize_pseudolikelihood <- function(x, iteration_max = 20) {
+optimize_pseudolikelihood <- function(x, iteration_max = 100) {
   p <- ncol(x)
   n <- nrow(x)
   # parameter matrix and sufficient statistics 
