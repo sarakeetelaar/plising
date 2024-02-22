@@ -104,9 +104,10 @@ optimize_pseudolikelihood <- function(x, iteration_max = 100) {
   
   mu <- diag(sigma)
   diag(sigma) <- 0
+  sigma <- sigma/2
   
   var_pl <- get_all_variances(x, sigma, mu, index)
-  sigma <- sigma/2
+
 
   raw_var <- var_pl$raw
   sandwich_var <- var_pl$sandwich
